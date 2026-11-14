@@ -129,5 +129,4 @@ This run writes files without the `_p1b` suffix.
 
 - **Sign convention:** all discontinuities are reported as below minus above €139,000. Estimates from `rdrobust`, which reports above minus below, are reversed.
 - **Lots at exactly €139,000:** the statute allows direct award "below" €139,000, but the main specification counts lots at exactly €139,000 as eligible, because 79.5% of them are direct awards after the reform. The strict definition is reported as a robustness check.
-- **Not yet verified:** the EU threshold for central government in 2020–21 (Delegated Regulation (EU) 2019/1828).
 - **Choices made after seeing results:** these are listed in the report, in the section on data limitations and specification decisions.

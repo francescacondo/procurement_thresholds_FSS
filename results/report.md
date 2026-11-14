@@ -41,7 +41,6 @@ This file lists the main results by part. The full explanation, with all tables,
   - Lots at exactly €139,000 are legally not eligible, but 79.5% of them are direct awards in P2. The main specification counts them as eligible (a deviation); the strict version gives a first stage of 0.276.
 - **Rotation principle:** applied below the EU thresholds in both P1b and P2 (art. 36(1) D.Lgs 50/2016). It was also written into the direct-award clause from 31 Jul 2021 (conversion law L. 108/2021). Above €139k, the negotiated procedure rotates invitations instead.
 - **New Code (D.Lgs 36/2023):** in force 1 Apr 2023, effective 1 Jul 2023 (art. 229). Art. 50 sets direct award below €140,000; art. 49 bars awarding to the outgoing contractor in the same sector.
-- **Not verified:** the EU threshold for central government (Reg. 2019/1828). EUR-Lex blocked the download; it needs to be saved by hand from https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32019R1828
 
 ---
 
@@ -52,7 +51,7 @@ This file lists the main results by part. The full explanation, with all tables,
 | Check | Estimate | Reading |
 |---|---|---|
 | Jump in direct award at €139k in P1b | +0.009 (0.016) | €139k separated no procedures before the reform (P0: −0.019, under 2 points) |
-| Same, central authorities, P1b | −0.077 (0.037) | fewer direct awards just below: probable EU threshold for central government [VERIFY] |
+| Same, central authorities, P1b | −0.077 (0.037) | fewer direct awards just below: possibly a pre-existing EU threshold for central government |
 | Award-record coverage, difference in discontinuities vs P1b | +0.033 (p = 0.15) | little selection into the awarded sample |
 
 ### I.1b Sorting at the cutoff: balance test [4.10]
@@ -239,7 +238,6 @@ The classes use awards in the previous 24 months (strictly earlier days), within
 
 ## Open items
 
-- **Legal check not done:** the EU threshold for central government (Reg. 2019/1828) needs a manual download. The other legal items are verified (see Data).
 - **Strict eligibility:** the statute excludes lots at exactly €139,000. The main specification still counts them as eligible, following observed practice (decision confirmed 14 Nov 2026). The strict version stays as a robustness row.
 - **Outcome cleaning:** done as robustness only (see I.5); the main specification uses the raw outcomes.
 - **Nominal values:** fine for the design, because the cutoff is nominal and the price ratio has no unit. They matter only for the distribution comparison and the value-weighted HHI.

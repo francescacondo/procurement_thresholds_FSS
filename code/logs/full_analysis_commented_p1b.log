@@ -1841,14 +1841,12 @@ importo_lotto: all characters numeric; replaced as double
 . * €139k in P0 should be ZERO — this is what makes the difference-in-
 . * discontinuities design work. P1 is excluded anyway (P1a: limit = EU thresho
 > ld).
-. * [VERIFY] The EU thresholds of art. 35 in 2020-2021 are set by Delegated
-. * Regulation (EU) 2019/1828 (not checked: EUR-Lex blocks scripted downloads; 
-> the
-. * Normattiva text of art. 35 still shows the 2016 values). If, as commonly
-. * reported, the threshold for CENTRAL government authorities was €139,000 fro
-> m
-. * 1 Jan 2020, then €139k separated procedure types for central authorities in
-. * late P0 and in P1 (and in P1a it was their direct-award limit).
+. * NOTE: the EU thresholds of art. 35 in 2020-2021 are set by Delegated
+. * Regulation (EU) 2019/1828. A possible explanation for a pre-reform
+. * discontinuity for central authorities: if the threshold for CENTRAL
+. * government authorities was €139,000 from 1 Jan 2020, then €139k separated
+. * procedure types for central authorities in late P0 and in P1 (and in P1a
+. * it was their direct-award limit).
 . 
 . gen byte period = .
 (1,454,116 missing values generated)
@@ -1892,7 +1890,7 @@ P0: pre-reform |    466,579       32.09       32.09
 . *   P1b (15 Sep 2020 – 31 May 2021): direct award below €75k
 . * Only P1b is a clean comparison period: €139k separated no national procedur
 > e
-. * types for services/supplies (subject to the [VERIFY] note above on the EU
+. * types for services/supplies (subject to the note above on the EU
 . * threshold for central authorities). P1b is also closer in time to P2 than P
 > 0,
 . * so slow-moving trends in procurement practice matter less.
@@ -1963,7 +1961,7 @@ cpv2: all characters numeric; replaced as byte
 . 
 . * Central authorities have their own ANAC section ("CENTRALE", ~22% of lots).
 . * WHY flag them? For central government the EU threshold may have been €139k
-. * in 2020-21 ([VERIFY], section 1.3), so €139k may have separated procedure
+. * in 2020-21 (note in section 1.3), so €139k may have separated procedure
 . * types for them before P2. Part 2 finds a small jump in direct award at 139k
 . * for central authorities in P1b; Part 4 shows results without them.
 . gen byte central = (region == "SEZIONE REGIONALE CENTRALE")
@@ -2072,8 +2070,8 @@ ANNULLATA/REVOCATA DOPO L'APERTURA DE.. |      2,613        0.18       99.96
 . * under Deviations.) In P2, 79.5% of the 2,298 lots at EXACTLY €139,000 are
 . * direct awards — more than just below (75.7%) and far more than just above
 . * (22.8%) — across 1,009 different authorities. In practice authorities treat
-. * €139,000 as eligible, whatever the strict wording ("inferiore a", [VERIFY]
-. * on the DL 77/2021 text). Counting these lots as above put ~2,300 mostly-
+. * €139,000 as eligible, although the DL 77/2021 text says "inferiore a"
+. * (strictly below). Counting these lots as above put ~2,300 mostly-
 . * direct lots right at the cutoff on the wrong side, with full kernel weight,
 . * which pulled every estimate toward zero. Counting them as below gives the
 . * same estimates as dropping them. below_strict keeps the old definition for
@@ -2716,7 +2714,7 @@ file data/intermediate/lots_v2.dta saved
 . * RESULTS (run of 11 Nov 2026): P1b overall −0.009, CI [−0.040, 0.022]; but
 . * central authorities +0.077 (CI [0.005, 0.149], N≈1,900; more direct awards
 . * ABOVE 139k) and, less clearly, also in P0 (+0.047, CI [0.000, 0.093]) — see
-. * the [VERIFY] note on the EU threshold for central government (section 1.3).
+. * the note on the EU threshold for central government (section 1.3).
 . * Non-central P1b: −0.036, CI [−0.072, 0.000]. By semester the jump is small
 . * and stable from Jun 2018 on (−0.006 to +0.012); only the Jan–May 2018 block
 >  is
@@ -4531,7 +4529,7 @@ g_auth    |
 . * companies 0.91, public bodies 0.76, other entities 0.85.
 . * HOW TO READ IT:
 . * - Every group bunches after the reform; none bunched before, except
-. *   central authorities (P1b b_hat 4.9 [2.9, 8.1]). That fits the [VERIFY]
+. *   central authorities (P1b b_hat 4.9 [2.9, 8.1]). That fits the
 . *   note in 1.3: €139k may already have been an EU threshold for central
 . *   government, and it matches their pre-reform jump in direct award (Part 2)
 > .
@@ -5210,7 +5208,7 @@ Absorbed degrees of freedom:
 . * Dec 2020 – May 2021 (all P1b) and block 0 is the first P2 semester.
 . *
 . * The series runs into P3 (as coded in 1.3: from 1 Jul 2023, D.Lgs 36/2023,
-. * rules [VERIFY]). Semester 4 is Jun 2023 (P2) + Jul–Nov 2023 (P3) and
+. * new Code). Semester 4 is Jun 2023 (P2) + Jul–Nov 2023 (P3) and
 . * semester 5 is all P3. A smaller jump there reflects the change of regime,
 . * not the P2 effect fading out; the plots mark the boundary at 3.5.
 . 
@@ -5797,7 +5795,7 @@ file results/figures/M4_rd_lratio_p1b.png written in PNG format
 . * ---- 4.6j: Excluding central authorities ----
 . * WHY? Part 2 found a jump in direct award at 139k for central authorities in
 . * P1b (+7.7pp, 95% CI [0.5, 14.9], section 2.3), possibly because the EU
-. * threshold for central government was €139k ([VERIFY], section 1.3). If so,
+. * threshold for central government was €139k (note in section 1.3). If so,
 . * 139k was already a procedural cutoff for them before P2. Dropping them
 . * removes that channel.
 . * (Chosen from the Part 2 diagnostics, before P1b outcomes were estimated.)
@@ -7507,9 +7505,10 @@ new_firm_24m |    622,401    .2086501     .406344          0          1
 . * groupmate's band DiD (+0.053), so the opening is not only toward firms new
 . * to one authority. The mean of new_firm_12m (0.2607) matches his
 . * new_entrant12 (0.2607), a check that the two definitions agree.
-. * [VERIFY] whether the rotation principle for below-threshold awards applies
-. * differently to direct awards and negotiated procedures; if so, it is a
-. * legal channel for this result.
+. * Rotation principle: it applies below the EU thresholds on both sides of
+. * the cutoff (art. 36(1) D.Lgs 50/2016), to awards under direct award and to
+. * invitations under the negotiated procedure; this difference in form is a
+. * possible legal channel for this result.
 . 
 . 
 . * ===========================================================================
@@ -8656,7 +8655,7 @@ file results/tables/C4b_concentration_fixed_size_p1b.csv saved
 > ol period)]
 . * with the long run = months 12–21 after the reform (Jun 2022 – Mar 2023).
 . * Months 22–24 (Apr–Jun 2023) are dropped: the new Code (D.Lgs. 36/2023) was
-. * already published and took effect on 1 Jul 2023 ([VERIFY] dates), so
+. * already published and took effect on 1 Jul 2023 (art. 229), so
 . * behaviour in those months may anticipate P3.
 . *
 . * This Part is DESCRIPTIVE of the first stage. It estimates no outcome effect

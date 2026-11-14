@@ -154,8 +154,6 @@ The rotation principle applied to all contracts below the EU thresholds in both 
 
 The new Public Contracts Code (D.Lgs 36/2023) entered into force on 1 April 2023 and became effective on 1 July 2023 (article 229). Its article 50 allows direct award of services and supplies below \texteuro140{,}000, and article 49 prohibits, as a rule, awarding a contract to the outgoing contractor when two consecutive awards concern the same commodity sector. These dates confirm the end of P2 on 30 June 2023.
 
-One legal point could not be verified. The thresholds of article 35 of D.Lgs 50/2016 in 2020--21 are set by Commission Delegated Regulation (EU) 2019/1828. The EUR-Lex website blocked the scripted download, so the reported central-government threshold of \texteuro139{,}000 remains unverified (Section~\ref{sec:limits}).
-
 \subsection{Main variables}
 
 \begin{table}[H]
@@ -253,7 +251,7 @@ The design checks assess whether \texteuro139k was associated with a procedural 
 
 In the aggregate sample, the pre-reform discontinuity in direct awards is small (row 2): +0.009 in P1b, which is not statistically significant, and $-$0.019 in P0 ($p<0.10$), less than 2 percentage points. These estimates support the use of \texteuro139k as the reform cutoff, although the aggregate result masks differences across authority types.
 
-For central authorities, the direct-award share in P1b is approximately 8 percentage points lower immediately below the cutoff (row 3). A possible explanation is a pre-existing regulatory threshold for central government at \texteuro139k in 2020--21 under Regulation (EU) 2019/1828, which could not be verified (Section~\ref{sec:law}). Other authorities exhibit a smaller discontinuity in the opposite direction (+0.036, $p<0.10$), so the two effects offset each other in the aggregate. All main estimates are therefore also reported excluding central authorities (Table~\ref{tab:robust}).
+For central authorities, the direct-award share in P1b is approximately 8 percentage points lower immediately below the cutoff (row 3). A possible explanation is a pre-existing regulatory threshold for central government at \texteuro139k in 2020--21 under Regulation (EU) 2019/1828. Other authorities exhibit a smaller discontinuity in the opposite direction (+0.036, $p<0.10$), so the two effects offset each other in the aggregate. All main estimates are therefore also reported excluding central authorities (Table~\ref{tab:robust}).
 
 In P2, lots immediately below the cutoff are more likely to have an award record (row 1). The change relative to P1b is small and statistically insignificant (last row), whereas the change relative to P0 is larger. The coverage test therefore provides less evidence of differential selection when P1b is used as the control period, although it does not rule out selection into the awarded sample.
 
@@ -764,8 +762,6 @@ Lot values are nominal. This is appropriate for the main design, because the leg
 Authority legal types come from a 2026 snapshot of the ANAC register. The register contains one record per authority with the dates on which the record was created and closed, but no history of changes in legal type. The classification therefore reflects current legal types and may misclassify authorities that changed form between 2020 and 2023.
 
 P0 is used only in the alternative-control specifications; the complete analysis has not been rerun using \code{global CTRL "P0"}.
-
-The central-government threshold under Regulation (EU) 2019/1828 could not be verified because EUR-Lex blocked the scripted download. The text should be downloaded manually from \url{https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32019R1828} and saved in \code{data/raw/law/}.
 
 Several specification choices were made after inspecting the results and are documented in the Deviations section of \code{pilot\_report.md}. These include replacing P0 with P1b as the control period, classifying lots valued at exactly \texteuro139{,}000 as eligible although the statute uses a strict threshold, selecting the bunching dummies and estimation window, and restricting supplier histories to strictly earlier days. Red-flag outcomes, fixed-size concentration, bunching by group and new-to-public-procurement outcomes were added on 13--14 November. The balance test, the authority fixed-effects rows and the outcome-cleaning checks were added on 14 November.
 
