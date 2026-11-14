@@ -189,8 +189,8 @@ After the reform, lots just below €139k are partly a sorted group. The differe
 | **S = P(two contracts, same firm)** | **−0.038 (0.018), p = 0.040** |
 | Share of firms new to the authority | +0.096 (0.025) |
 
-- Exposed authorities awarded about 25% more lots, which lowers the HHI mechanically. S does not depend on the number of contracts.
-- At the mean exposure, S falls by about 0.006, which is 17% of its mean.
+- Exposed authorities awarded more lots, which lowers the HHI mechanically: the log number of lots per authority-semester rises by 0.25 (0.07) per unit of exposure; holding it fixed, the HHI effect is −0.004 (0.015). S does not depend on the number of contracts.
+- At the mean exposure (0.15), S falls by about 0.006, which is 16% of its mean.
 - S has no pre-reform gap. The fall is concentrated in the first post-reform semester.
 
 **Part II in short:** eligible contracts go more often to firms new to the authority and new to public procurement. Authorities do not keep their usual suppliers. Concentration falls only slightly once the number of contracts is accounted for.

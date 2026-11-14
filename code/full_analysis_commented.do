@@ -63,7 +63,7 @@ if _rc {
 * only the direct-award threshold differs (€75k in P1b, €139k in P2). Being
 * closer in time, it leaves less room for other changes (reporting practice,
 * market conditions) between control and treatment period. The cost is a
-* smaller sample (≈ 1/3 of P0 near the cutoff), so standard errors are larger.
+* smaller sample (0.32 of P0 within ±40k; 1.13), so standard errors are larger.
 if "$CTRL" == "" global CTRL "P1B"
 
 * Period groups, used in loops below as ${g_<name>}
@@ -274,6 +274,20 @@ capture postclose RES
 postfile RES str24 tbl str32 row str24 col double(b se p N lo hi extra) ///
     using "data/intermediate/_coefficients${SFX}.dta", replace
 
+* dpost <name> <value>: one descriptive number quoted in a comment or in the
+* reports (a count, a share, a mean). Written to
+* results/tables/descriptives${SFX}.csv in Part 8, so every such number is
+* produced by this file.
+capture program drop dpost
+program define dpost
+    args name value
+    post DESC ("`name'") (`value')
+    di as text "  [descriptive] `name' = " %12.4f `value'
+end
+capture postclose DESC
+postfile DESC str40 name double value ///
+    using "data/intermediate/_descriptives${SFX}.dta", replace
+
 
 * ##############################################################################
 * ##############################################################################
@@ -342,7 +356,8 @@ forvalues y = 2018/2023 {
         * WHY "denominazione_amministrazione_ap"? The raw column
         * DENOMINAZIONE_AMMINISTRAZIONE_APPALTANTE has 40 characters; Stata
         * truncates variable names to 32, so after import it is called
-        * denominazione_amministrazione_ap (checked on all 72 headers).
+        * denominazione_amministrazione_ap (the keep below fails, and the log
+        * says so, if a header differs).
         * The bid deadline (data_scadenza_offerta -> deadline_date, 1.5) is
         * needed for the deadline-to-award outcomes.
         * Fall back to a minimal set if the full keep fails (should not happen;
@@ -436,7 +451,7 @@ keep if year(pub_date) >= 2018 & year(pub_date) <= 2023
 * The line below was meant to drop cancelled/withdrawn lots, but in the CIG
 * files stato is "ATTIVO" for every lot (0 rows dropped).
 * Cancellation is recorded in the CIG outcome field instead (esito_cig, section
-* 1.5: "ANNULLATA ..." codes 2, 6, 7; about 16,800 lots), and those lots STAY
+* 1.5: "ANNULLATA ..." codes 2, 6, 7; 16,819 lots, 1.13), and those lots STAY
 * in the sample. That is the safer choice for the design: whether a lot gets
 * cancelled can itself respond to the reform (it is a post-treatment outcome),
 * so dropping cancelled lots would condition the sample on an outcome.
@@ -540,7 +555,7 @@ label var cpv2 "CPV division (first 2 digits)"
 gen region = sezione_regionale
 label var region "ANAC regional section"
 
-* Central authorities have their own ANAC section ("CENTRALE", ~22% of lots).
+* Central authorities have their own ANAC section ("CENTRALE", 22% of lots; 1.13).
 * WHY flag them? For central government the EU threshold may have been €139k
 * in 2020-21 (note in section 1.3), so €139k may have separated procedure
 * types for them before P2. Part 2 finds a small jump in direct award at 139k
@@ -609,9 +624,9 @@ label var direct "Direct award (from procedure type)"
 * eligible side (direct award allowed in P2); x > 0 is above.
 *
 * WHY "≤ 139,000" and not "< 139,000"? In P2, 79.5% of the 2,298 lots at
-* EXACTLY €139,000 are
-* direct awards — more than just below (75.7%) and far more than just above
-* (22.8%) — across 1,009 different authorities. In practice authorities treat
+* EXACTLY €139,000 are direct awards — more than just below (75.7% of lots at
+* €134,000–138,999) and far more than just above (23.8% of lots at
+* €139,001–144,000) — across 1,009 different authorities (1.13). In practice authorities treat
 * €139,000 as eligible, although the DL 77/2021 text says "inferiore a"
 * (strictly below). Counting these lots as above put ~2,300 mostly-
 * direct lots right at the cutoff on the wrong side, with full kernel weight,
@@ -719,7 +734,7 @@ drop _merge_agg
 * ==============================================================================
 * Combine the aggiudicazioni merge with the CIG's own ESITO field.
 * award_any = 1 if the lot has an award record OR the CIG ESITO says "awarded".
-* This captures ~40k additional lots (4.9% of non-matched) that are AGGIUDICATA
+* This captures 40,431 additional lots (4.9% of non-matched; 1.13) that are AGGIUDICATA
 * per the CIG file but lack an aggiudicazioni record.
 
 gen byte esito_awarded = (cod_esito_cig == "1" | cod_esito_cig == "1.0")
@@ -749,7 +764,7 @@ label var days_award "Days from publication to award"
 
 * ---- REBATE (dropped as primary outcome) ----
 * ribasso_aggiudicazione is the percentage discount the winner offered.
-* PROBLEM: 57.5% of direct awards have rebate = 0. This is likely a reporting
+* PROBLEM: 61% of direct awards with an award record have rebate = 0 (1.13). This is likely a reporting
 * convention (direct awards don't have a formal bidding process, so the "rebate"
 * field is left at zero). We keep it but don't use it as a primary outcome.
 gen float rebate = ribasso_aggiudicazione if has_award == 1
@@ -807,6 +822,54 @@ summarize lratio if abs(x) <= 60000 & has_award == 1, detail
 summarize days_award if abs(x) <= 60000 & has_award == 1, detail
 
 
+* ==============================================================================
+* 1.13  DESCRIPTIVE FACTS QUOTED IN THE COMMENTS (written by dpost)
+* ==============================================================================
+di as text _n "=== 1.13: Descriptive facts ==="
+* (a) Cancelled lots: CIG outcome codes 2, 6, 7 ("ANNULLATA ..."), kept (1.2)
+count if inlist(cod_esito_cig, "2", "2.0", "6", "6.0", "7", "7.0")
+dpost n_cancelled `r(N)'
+* (b) Share of lots from central authorities (1.4)
+summarize central, meanonly
+dpost share_central `r(mean)'
+* (c) Lots at exactly 139,000 in P2 (1.7, 2.1): number, share direct, share
+*     with an award record, number of authorities; direct share among lots
+*     just below (134,000–138,999) and just above (139,001–144,000)
+count if period == 2 & importo_lotto == 139000
+dpost p2_n_at139 `r(N)'
+summarize direct if period == 2 & importo_lotto == 139000, meanonly
+dpost p2_direct_at139 `r(mean)'
+summarize has_award if period == 2 & importo_lotto == 139000, meanonly
+dpost p2_coverage_at139 `r(mean)'
+summarize direct if period == 2 & importo_lotto >= 134000 & importo_lotto < 139000, meanonly
+dpost p2_direct_134_139 `r(mean)'
+summarize direct if period == 2 & importo_lotto > 139000 & importo_lotto <= 144000, meanonly
+dpost p2_direct_139_144 `r(mean)'
+preserve
+keep if period == 2 & importo_lotto == 139000
+contract authority_id
+dpost p2_authorities_at139 `=_N'
+restore
+* (d) Lots awarded per the CIG outcome field but without an award record (1.10)
+count if award_any == 1 & has_award == 0
+local n_extra = r(N)
+count if has_award == 0
+dpost n_awardany_extra `n_extra'
+dpost share_awardany_extra_of_unmatched `=`n_extra'/r(N)'
+* (e) Direct awards with a recorded rebate of 0 (1.11)
+gen byte _reb0 = (rebate == 0) if direct == 1 & has_award == 1 & !missing(rebate)
+summarize _reb0, meanonly
+dpost share_direct_rebate0 `r(mean)'
+drop _reb0
+* (f) Lots within ±40k of 139k in P1b and in P0 (control-period choice)
+count if p1b == 1 & abs(x) <= 40000
+local n1 = r(N)
+count if period == 0 & abs(x) <= 40000
+dpost n_window_p1b `n1'
+dpost n_window_p0 `r(N)'
+dpost ratio_window_p1b_p0 `=`n1'/r(N)'
+
+
 * ##############################################################################
 * ##############################################################################
 * ##                                                                          ##
@@ -838,7 +901,7 @@ use "data/intermediate/lots_v2.dta", clear
 * RESULTS (main run, lots at €139,000 counted as eligible):
 * P0 +0.022, CI [−0.003, 0.046]; P1b +0.008, CI [−0.034, 0.050];
 * P2 −0.070, CI [−0.090, −0.050] (−0.095 without lots at exactly €139k,
-* whose award coverage is low: 45.5%). In P2 lots just below 139k are more
+* whose award coverage is low: 45.5%; 1.13). In P2 lots just below 139k are more
 * often awarded/reported: direct awards finish faster. This is caused by the
 * reform, so no choice of control period removes it; outcome estimates on
 * awarded lots need a selection check (4.4). Diff-in-disc on coverage:
@@ -1472,9 +1535,10 @@ drop bin1k bin_bunch bin_norm
 *     Other   = everything else (foundations, consortia, associations,
 *               local-government agencies (code 21), not classified, …).
 *   WHY only 3 groups? The legal-type code is a legal FORM, not a kind of
-*   authority: municipalities and health bodies are spread over codes 55 and
-*   15 (checked against authority names), so finer groups would mostly
-*   reflect how an authority registered.
+*   authority: lots of municipalities are registered under code 15 (70%) or
+*   55 (22%), and lots of health bodies under 15 (42%) or other codes
+*   (computed below), so finer groups would mostly reflect how an authority
+*   registered.
 *
 * ESTIMATOR: the 3.2 estimator on each period × group cell (bins (k−1000, k]
 * in (100k, 200k], order-7 polynomial, excluded window (134k, 144k], round
@@ -1586,6 +1650,23 @@ replace g_auth = "Public" if inlist(natura_giuridica_codice, "55", "15", "14", "
 replace g_auth = "Company" if g_auth == "" & _mreg == 3 ///
     & strpos(ustrupper(natura_giuridica_descrizione), "SOCIET") == 1
 replace g_auth = "Other" if g_auth == "" & _mreg == 3
+* Municipalities and health bodies by legal-type code (why only 3 groups):
+* share of their P1b + P2 lots registered under code 55 and under code 15
+gen _nm = ustrupper(authority_name)
+gen byte _muni   = strpos(_nm, "COMUNE DI ") == 1
+gen byte _health = regexm(_nm, "AZIENDA SANITARIA|AZIENDA OSPEDALIERA|AZIENDA UNITA SANITARIA|^ASL |^A\.S\.L\.")
+foreach g in muni health {
+    di as text "  Legal-type codes of `g' (P1b + P2 lots):"
+    tab natura_giuridica_codice if _`g' == 1 & _mreg == 3 & (period == 2 | ${g_CTRL}), sort
+    gen byte _c55 = natura_giuridica_codice == "55" if _`g' == 1 & _mreg == 3 & (period == 2 | ${g_CTRL})
+    gen byte _c15 = natura_giuridica_codice == "15" if _`g' == 1 & _mreg == 3 & (period == 2 | ${g_CTRL})
+    summarize _c55, meanonly
+    dpost `g'_share_code55 `r(mean)'
+    summarize _c15, meanonly
+    dpost `g'_share_code15 `r(mean)'
+    drop _c55 _c15
+}
+drop _nm _muni _health
 tab natura_giuridica_descrizione g_auth if (period == 2 | ${g_CTRL}) ///
     & importo_lotto > 100000 & importo_lotto <= 200000 & g_auth != "Public", m
 
@@ -1801,12 +1882,22 @@ foreach h in 20000 30000 60000 {
     drop kw_h
 }
 
+* Data-driven (MSE-optimal) bandwidths in P2, selected within the ±40k
+* estimation window, for comparison with h = 40k
+foreach v in direct days_award lratio {
+    local cond "has_award == 1"
+    if "`v'" == "direct" local cond "1"
+    quietly rdbwselect `v' xr if period == 2 & pnrr == 0 & abs(x) <= 40000 & `cond', ///
+        kernel(triangular) bwselect(mserd) masspoints(off)
+    dpost bw_mserd_p2_`v' `e(h_mserd)'
+}
+
 * RESULTS (P1b control, main run):
 * FS = 0.435 (SE 0.022), t² = 405, N = 96,788. Stable across bandwidths:
 * h=20k 0.435, h=30k 0.439, h=60k 0.419. The reform raised the share of
 * direct awards just below 139k by about 44 pp relative to just above.
-* Data-driven (MSE-optimal) bandwidths in P2 are narrower than 40k (≈12k for
-* direct, ≈18k for days, ≈31k for lratio; not computed in this file), so h=40k trades
+* Data-driven (MSE-optimal) bandwidths in P2, selected within ±40k (computed
+* above): 8k for direct, 10k for days, 15k for lratio, so h=40k trades
 * some bias for precision; the h=20k rows are the check on that.
 
 
@@ -1867,6 +1958,23 @@ foreach var in days_award lratio single_bid nbids n_invited {
     }
 }
 
+* Facts used in HOW TO READ THEM below (P2, non-PNRR, ±40k, awarded lots)
+local W2 "period == 2 & pnrr == 0 & abs(x) <= 40000 & has_award == 1"
+gen byte _onebid = (nbids == 1) if !missing(nbids)
+summarize _onebid if `W2' & direct == 1, meanonly
+dpost p2_direct_share_onebid `r(mean)'
+gen byte _atbase = (abs(lratio) < 1e-9) if !missing(lratio)
+summarize _atbase if `W2' & direct == 1, meanonly
+dpost p2_direct_share_award_eq_base `r(mean)'
+summarize _atbase if `W2' & direct == 0, meanonly
+dpost p2_other_share_award_eq_base `r(mean)'
+summarize lratio if main_sample == 1 & abs(x) <= 40000 & has_award == 1
+dpost lratio_window_min `r(min)'
+dpost lratio_window_max `r(max)'
+count if main_sample == 1 & abs(x) <= 40000 & has_award == 1 & lratio < -1
+dpost n_lratio_window_below_m1 `r(N)'
+drop _onebid _atbase
+
 * RESULTS (awarded lots, h=40k):
 *   days_award  −52.3 (10.7)  p<0.001   [h=20k −59.1, 30k −54.3, 60k −44.6]
 *   lratio      +0.075 (0.030) p=0.012  [h=20k +0.071 (0.042), 30k +0.067, 60k +0.077]
@@ -1877,8 +1985,8 @@ foreach var in days_award lratio single_bid nbids n_invited {
 * - single_bid and nbids are largely MECHANICAL: 87% of P2 direct awards in
 *   the window record exactly one bid. They show that the procedure changed,
 *   not separately that markets became less competitive.
-* - lratio = log(award/base). 51% of P2 direct awards have award = base
-*   exactly (lratio = 0) vs 31% of other procedures, so a higher lratio may
+* - lratio = log(award/base). 46% of P2 direct awards have award = base
+*   exactly (lratio = 0) vs 27% of other procedures, so a higher lratio may
 *   mean "no discount recorded" (base set at the agreed price) rather than
 *   "paid more"; the data cannot separate the two. lratio also has extreme
 *   tails (min −15, max 6.9; 2,584 lots below −1).
@@ -1968,14 +2076,27 @@ foreach var in awarded_90 awarded_180 {
     }
 }
 
+* Right-censoring check: awards dated after the end of P2 exist in the data,
+* and the share of P2 lots with an award record by publication month,
+* Jan–Jun 2023 (a drop in the last months would signal censoring)
+forvalues y = 2024/2025 {
+    count if has_award == 1 & year(award_date) == `y'
+    dpost n_awards_dated_`y' `r(N)'
+}
+forvalues m = 1/6 {
+    summarize has_award if period == 2 & pnrr == 0 & ym == ym(2023, `m'), meanonly
+    dpost p2_coverage_2023m`m' `r(mean)'
+}
+
 * RESULTS (all lots, h=40k, N = 96,788):
 *   awarded_90  +0.098 (0.022) p<0.001;  awarded_180 +0.082 (0.023) p<0.001.
 * These are free of selection into the sample, but they MIX two things:
 * having an award record at all (coverage DiD vs P1b: +0.033, p=0.15, 2.2)
 * and being awarded faster. Read them as "more lots below 139k reach a
 * recorded award within 3/6 months", not as a pure speed effect.
-* No right-censoring worry: award dates run into 2025, and the share of P2
-* lots with an award record is flat (≈0.52) across Jan–Jun 2023 publications.
+* No right-censoring worry: the data contain 28,369 awards dated 2024 and 2,129
+* dated 2025, and the share of P2 lots with an award record does not fall
+* for the latest publications (0.41 in Jan 2023, 0.48 in Jun 2023).
 
 
 * ==============================================================================
@@ -2212,13 +2333,17 @@ foreach g in P1b P0 {
 * conservative (fewer clusters → larger SEs).
 *
 * provincia is blank for about a third of the awarded lots in the window
-* (17,818 of 53,598). reghdfe silently drops observations with a missing
+* (17,818 of 53,598; computed below). reghdfe silently drops observations with a missing
 * cluster variable, so clustering on provincia alone would run on a smaller,
 * different sample. Lots with a blank province are clustered at the region level
 * (central authorities form one cluster), which keeps the main sample and is
 * if anything more conservative. N is printed to confirm it matches 4.2.
 
 di as text _n "--- Cluster by province (region if province blank) ---"
+count if main_sample == 1 & abs(x) <= 40000 & has_award == 1 & provincia == ""
+dpost n_window_awarded_blank_province `r(N)'
+count if main_sample == 1 & abs(x) <= 40000 & has_award == 1
+dpost n_window_awarded `r(N)'
 gen str80 prov_cl = provincia
 replace prov_cl = "REGION: " + region if prov_cl == ""
 encode prov_cl, gen(province_id)
@@ -2387,6 +2512,42 @@ foreach var in direct days_award lratio single_bid nbids {
     }
 }
 
+* ---- 4.6k: Round values at the placebo cutoffs ----
+* Lots at exactly a round value are a different kind of lot (faster to
+* award). (i) Mean days at exactly c vs other lots within ±15k (P2, awarded);
+* (ii) the placebo jumps in days without any lot at a multiple of €5,000.
+gen byte _r5 = (mod(importo_lotto, 5000) == 0) if !missing(importo_lotto)
+foreach c in 100000 160000 200000 {
+    local ck = `c'/1000
+    summarize days_award if period == 2 & pnrr == 0 & has_award == 1 & importo_lotto == `c', meanonly
+    dpost p2_days_at_`ck'k `r(mean)'
+    summarize days_award if period == 2 & pnrr == 0 & has_award == 1 & importo_lotto != `c' ///
+        & abs(importo_lotto - `c') <= 15000, meanonly
+    dpost p2_days_near_`ck'k `r(mean)'
+}
+foreach c in 100000 120000 160000 200000 {
+    local ck = `c'/1000
+    local h = 15000
+    if `c' == 200000 local h = 10000
+    local side "importo_lotto < 139000"
+    if `c' > 139000 local side "importo_lotto > 139000"
+    gen float x_plac = importo_lotto - `c'
+    gen byte below_plac = (importo_lotto < `c')
+    gen float kw_plac = max(0, 1 - abs(x_plac)/`h') if abs(x_plac) <= `h'
+    quietly reghdfe days_award i.below_plac##c.x_plac [aw=kw_plac] ///
+        if period == 2 & pnrr == 0 & abs(x_plac) <= `h' & `side' & has_award == 1 & _r5 == 0, ///
+        absorb(cpv2 region ym) vce(cluster authority_id)
+    rpost Mplac c`ck'_nor5 days_award, coef(1.below_plac)
+    drop x_plac below_plac kw_plac
+}
+foreach g in P1b P0 {
+    quietly reghdfe days_award i.below##c.x [aw=kw40] ///
+        if ${g_`g'} & pnrr == 0 & abs(x) <= 40000 & has_award == 1 & _r5 == 0, ///
+        absorb(cpv2 region ym) vce(cluster authority_id)
+    rpost Mplac p139_`g'_nor5 days_award, coef(1.below)
+}
+drop _r5
+
 * RESULTS 4.6 (h=40k unless stated; below×post coefficients):
 *                       days      lratio          single_bid
 *   main               −52.3     +0.075 (0.030)   +0.148
@@ -2405,9 +2566,10 @@ foreach var in direct days_award lratio single_bid nbids {
 * Placebos: in P2 at 100k/120k/160k/200k the jump in direct is ≤0.035, but
 * days jumps at 100k (+10.3), 160k (+23.2) and 200k (+19.4); at 139k days
 * jumps in P1b (+23.5, SE 9.9) and P0 (+15.5, SE 4.7); direct does not
-* (−0.019, −0.016). Lots at exact round values are faster (e.g. 39 vs 60
-* days at €100,000) and all sit on one side of these cutoffs; dropping
-* multiples of €5k roughly halves the placebo jumps (not computed in this file). Because
+* (−0.019, −0.016). Lots at exact round values are faster (39 vs 62
+* days at €100,000; 4.6k) and all sit on one side of these cutoffs; without
+* multiples of €5k (4.6k) the days jumps are +4.4 at 100k, +16.6 at 160k,
+* +9.8 at 200k, +10.8 at 139k in P1b and +15.8 at 139k in P0. Because
 * this round-number pattern is present before and after the reform, the
 * diff-in-disc subtracts it.
 * SUMMARY: the first stage and days are robust everywhere (days shrinks
@@ -2440,8 +2602,8 @@ foreach var in direct days_award lratio single_bid nbids {
 *
 * CAVEAT: the bands do not hold the same lots before and after. Part 3 shows
 * that the reform moved lots INTO the treated band (from below €75k and from
-* above €139k): it has ~1,015 lots/month in P1b vs ~1,442 in P2 (+42%), while
-* the control band falls from ~578 to ~496 (−14%). So this DiD compares
+* above €139k): it has 958 lots/month in P1b vs 1,442 in P2 (+50%), while
+* the control band goes from 546 to 496 (-9%; computed below). So this DiD compares
 * changing populations; it is a supporting check, not the main estimate.
 
 di as text _n "========================================"
@@ -2555,6 +2717,17 @@ twoway (rcap ci_lo_l ci_hi_l rel_sem, lcolor(navy%50)) ///
 graph export "results/figures/M6_es_lratio${SFX}.png", width(2000) replace
 restore
 
+* Lots per month in each band, control period vs P2 (CAVEAT above)
+foreach g in CTRL P2 {
+    local cond = cond("`g'" == "CTRL", "${g_CTRL}", "period == 2")
+    levelsof ym if main_sample == 1 & `cond', local(_months)
+    local nm : word count `_months'
+    foreach b in 1 0 {
+        count if main_sample == 1 & `cond' & treat_band == `b'
+        dpost lots_per_month_`g'_band`b' `=r(N)/`nm''
+    }
+}
+
 * RESULTS 4.7 (P1b vs P2, bands 100–130k vs 150–180k):
 *   direct +0.301 (0.011), days −14.0 (4.2), lratio +0.030 (0.015),
 *   single_bid +0.050 (0.014), nbids +0.83 (0.84, n.s.).
@@ -2610,12 +2783,16 @@ di as text    "========================================"
 * ": CRITERIO DEL MINOR PREZZO" (= lowest price, despite the prefix), the
 * older plain "OFFERTA ECONOMICAMENTE PIU' VANTAGGIOSA" (MEAT) and "PREZZO PIU'
 * BASSO" (lowest price), or blank. Blank = missing: 18% of awarded lots in the
-* ±40k window, 34% of direct awards. Because blanks are more common under
+* ±40k window, 34% of direct awards (computed below). Because blanks are more common under
 * direct award, crit_recorded (criterion filled in) is estimated too, as a
 * selection check for meat.
 gen str200 _crit = ustrupper(criterio_aggiudicazione)
 gen byte crit_recorded = (_crit != "") if has_award == 1
 label var crit_recorded "Award criterion recorded (awarded lots)"
+summarize crit_recorded if main_sample == 1 & abs(x) <= 40000, meanonly
+dpost window_share_criterion_blank `=1 - r(mean)'
+summarize crit_recorded if main_sample == 1 & abs(x) <= 40000 & direct == 1, meanonly
+dpost window_direct_share_criterion_blank `=1 - r(mean)'
 gen byte meat = .
 replace meat = 1 if strpos(_crit, "MIGLIOR RAPPORTO") > 0
 replace meat = 1 if strpos(_crit, "CRITERI QUALITATIVI") > 0
@@ -2633,12 +2810,16 @@ drop _crit
 * ---- Bid window (ANAC ind. 14) and evaluation time (ANAC ind. 15) ----
 * deadline_date comes from data_scadenza_offerta (1.5); missing for 0.2% of
 * lots. NOT cleaned, like days_award: eval_days < 0 (award dated before the
-* bid deadline) for about 11% of awarded lots in the window, mostly direct
+* bid deadline) for 10.7% of awarded lots in the window (4.9), mostly direct
 * awards; cleaned versions are estimated in 4.9.
 gen int bid_window = deadline_date - pub_date if has_award == 1
 gen int eval_days  = award_date - deadline_date if has_award == 1
 label var bid_window "Days publication -> bid deadline (ANAC ind. 14)"
 label var eval_days  "Days bid deadline -> award (ANAC ind. 15)"
+gen byte _nodl = missing(deadline_date)
+summarize _nodl, meanonly
+dpost share_lots_no_deadline `r(mean)'
+drop _nodl
 * Identity check: the two parts add up to days_award
 count if has_award == 1 & !missing(bid_window, eval_days) ///
     & days_award != bid_window + eval_days
@@ -3037,9 +3218,9 @@ if _rc {
     * Deduplicate: one winner per CIG. Keep the award record with the highest
     * id_aggiudicazione. NOTE: section 1.8 picks the award record by the most
     * recent award_date first, then id; the two rules pick different records
-    * for only 115 of 4.8 million CIGs and for none in the estimation sample.
-    * Some award records list several winners (72,342 CIG-award pairs after
-    * the role filter, e.g. framework agreements with several operators). We
+    * for 187 of 4.8 million CIGs and for 2 lots in the estimation window
+    * (computed in 5.2). Some award records list several winners (e.g.
+    * framework agreements with several operators). We
     * keep one; ties are broken by codice_fiscale so the choice is the same on
     * every rebuild (before, it depended on the sort order of the import).
     destring id_aggiudicazione, replace force
@@ -3089,7 +3270,7 @@ drop _m_winners
 * same authority, same firm" is the closest proxy for "same tender".
 *
 * COVERAGE: the history contains only lots with an award record and a matched
-* winner (about 55% of lots). A pair can have earlier contracts that were never
+* winner (55% of lots in the window; computed below). A pair can have earlier contracts that were never
 * recorded, so new_supplier overstates how new the firm is; the diff-in-disc
 * removes this only if coverage is the same just below and just above 139k
 * (coverage DiD vs P1b +0.033, n.s., section 2.2).
@@ -3166,6 +3347,41 @@ sort authority_id codice_fiscale cpv3 pub_date cig
 * Save the lots-with-winners dataset
 compress
 save "data/intermediate/lots_winners.dta", replace
+
+* Facts quoted in 5.1–5.2 (lots with a winner):
+* (a) lots in the ±40k window (control + P2, non-PNRR) with a same-day lot of
+*     the same authority–firm pair listed before them (multi-lot awards)
+sort authority_id codice_fiscale pub_date cig
+by authority_id codice_fiscale pub_date: gen byte _sameday_pred = (_n > 1)
+gen byte _win = (${g_CTRL} | period == 2) & !(flag_pnrr_pnc == "1" | flag_pnrr_pnc == "SI") ///
+    & abs(x) <= 40000
+summarize _sameday_pred if _win, meanonly
+dpost window_share_sameday_pred `r(mean)'
+count if _win
+local n_w = r(N)
+drop _sameday_pred _win
+sort authority_id codice_fiscale cpv3 pub_date cig
+* (b) share of window lots that have a winner (history coverage)
+preserve
+use x period p1b flag_pnrr_pnc using "data/intermediate/lots_v2.dta", clear
+count if (${g_CTRL} | period == 2) & !(flag_pnrr_pnc == "1" | flag_pnrr_pnc == "SI") & abs(x) <= 40000
+dpost window_share_with_winner `=`n_w'/r(N)'
+restore
+* (c) award-record choice: 1.8 (latest award date, then id) vs 5.1 (highest id)
+preserve
+use cig id_aggiudicazione using "data/intermediate/aggiudicazioni_v2.dta", clear
+capture destring id_aggiudicazione, replace force
+rename id_aggiudicazione _id18
+merge 1:1 cig using "data/intermediate/aggiudicatari_v2.dta", keepusing(id_aggiudicazione) keep(match) nogen
+dpost n_cig_with_award_and_winner `=_N'
+count if _id18 != id_aggiudicazione
+dpost n_cig_award_rule_differs `r(N)'
+keep if _id18 != id_aggiudicazione
+keep cig
+merge 1:1 cig using "data/intermediate/lots_v2.dta", keepusing(x period p1b flag_pnrr_pnc) keep(match) nogen
+count if (${g_CTRL} | period == 2) & !(flag_pnrr_pnc == "1" | flag_pnrr_pnc == "SI") & abs(x) <= 40000
+dpost n_window_award_rule_differs `r(N)'
+restore
 
 di as text "  lots_winners.dta: " _N " rows"
 di as text _n "  Summary statistics of competition variables:"
@@ -3361,20 +3577,20 @@ foreach var in new_supplier new_firm_12m new_firm_24m repeat_winner_24m repeat_w
 * semester after the dedup), not lots; new_share is the share of those firms
 * that are new to the authority.
 *
-* HOW TO READ THE HHI RESULT (checks not run in this file):
+* HOW TO READ THE HHI RESULT (numbers computed below):
 * (1) Lot-count mechanism. After the reform, more-exposed authorities publish
-*     more lots (log lots × exposure × post ≈ +0.25, SE 0.07). With more lots
+*     more lots (log lots × exposure × post +0.25, SE 0.07). With more lots
 *     there are more firms, so HHI falls mechanically: holding log lots fixed
-*     the HHI effect is −0.003 (0.015). The lot count is itself affected by
+*     the HHI effect is -0.004 (0.015). The lot count is itself affected by
 *     the reform, so that is not the right estimate either, but it shows the
 *     HHI result means "more, smaller contracts", not necessarily a less
 *     concentrated supplier base.
 * (2) Pre-reform gap. Exposure × semester −2 (Sep–Nov 2020, before the
-*     reform; reference = semester −1) is −0.067 (0.046), as large as the
+*     reform; reference = semester −1) is -0.065 (0.046), as large as the
 *     post-reform coefficients (−0.06 to −0.12).
 * (3) Exposure is measured on the SAME control-period lots that form the
 *     pre-reform HHI, which can create such a gap. It is also noisy: half of
-*     the authorities have ≤ 7 control-period lots.
+*     the authorities have ≤ 6 control-period lots.
 * (4) Partial semesters: −2 has only 2.5 months of P1b and 4 only June 2023.
 
 di as text _n "========================================"
@@ -3390,7 +3606,7 @@ gen byte pnrr = (flag_pnrr_pnc == "1" | flag_pnrr_pnc == "SI")
 preserve
 keep if ${g_CTRL}
 gen byte in_band = (importo_lotto >= $BAND_LO & importo_lotto <= 139000)
-collapse (mean) exposure = in_band, by(authority_id)
+collapse (mean) exposure = in_band (count) n_ctrl_lots = in_band, by(authority_id)
 tempfile exposure
 save `exposure'
 restore
@@ -3417,12 +3633,13 @@ gen float firm_share_sq = firm_share^2
 * WHY sort by (pub_date cig)? Without a sort order inside the cell Stata
 * keeps an arbitrary lot and new_share depends on row order. supplier_hhi is
 * the same on every row of a firm, so it does not depend on this choice.
+bysort authority_id rel_sem: gen long _nlots_cell = _N
 bysort authority_id rel_sem codice_fiscale (pub_date cig): keep if _n == 1
 
 gen byte _one = 1
 collapse (sum) supplier_hhi=firm_share_sq ///
     (mean) new_share=new_supplier ///
-    (sum) n_lots=_one, ///
+    (sum) n_lots=_one (first) n_lots_all=_nlots_cell, ///
     by(authority_id rel_sem)
 
 gen byte post = (rel_sem >= 0)
@@ -3462,8 +3679,42 @@ if !_rc {
     rpost Cconc new_share all, coef(exp_post)
 }
 
-* RESULTS 5.4 (18,907 authority × semester cells, 3,229 authorities; mean
-* exposure 0.16, median 0.11): HHI exposure × post −0.071 (0.026);
+* Facts used in HOW TO READ THE HHI RESULT:
+* (0) panel size, authorities, exposure
+dpost panel_cells `=_N'
+egen byte _tagA = tag(authority_id)
+count if _tagA
+dpost panel_authorities `r(N)'
+summarize exposure if _tagA, detail
+dpost panel_exposure_mean `r(mean)'
+dpost panel_exposure_median `r(p50)'
+summarize n_ctrl_lots if _tagA, detail
+dpost panel_median_ctrl_lots `r(p50)'
+drop _tagA
+* (1) lot-count mechanism: log lots per cell on exposure × post, and the HHI
+*     effect holding log lots fixed
+gen float ln_lots_all = ln(n_lots_all)
+quietly reghdfe ln_lots_all exp_post, absorb(authority_id rel_sem) cluster(authority_id)
+rpost Cconc ln_lots all, coef(exp_post)
+quietly reghdfe supplier_hhi exp_post ln_lots_all, absorb(authority_id rel_sem) cluster(authority_id)
+rpost Cconc supplier_hhi_given_lnlots all, coef(exp_post)
+* (2) pre-reform gap: exposure × semester event study for the HHI
+levelsof rel_sem, local(_sems)
+local _es ""
+foreach t of local _sems {
+    if `t' == $ES_REF continue
+    local nm = cond(`t' < 0, "m" + string(abs(`t')), "p" + string(`t'))
+    gen float hes_`nm' = exposure * (rel_sem == `t')
+    local _es "`_es' hes_`nm'"
+}
+quietly reghdfe supplier_hhi `_es', absorb(authority_id rel_sem) cluster(authority_id)
+foreach v of local _es {
+    rpost Cconc hhi_`v' all, coef(`v')
+}
+drop ln_lots_all hes_*
+
+* RESULTS 5.4 (18,909 authority × semester cells, 18,907 in the regressions;
+* 3,231 authorities; mean exposure 0.15, median 0.10): HHI exposure × post −0.071 (0.026);
 * new_share +0.096 (0.025). Going from zero exposure to the mean exposure
 * lowers HHI by about 0.011. See HOW TO READ THE HHI RESULT above: this is
 * mostly "more, smaller contracts per exposed authority", and there is a
@@ -3644,8 +3895,8 @@ restore
 *   cells shrinks to −0.038 once the measure no longer depends on n.
 * - What remains is small: at the mean exposure (0.16), S falls by about
 *   0.006, i.e. two contracts of an exposed authority are slightly less
-*   often won by the same firm (about −17% of the mean 0.036). For the HHI of
-*   5 contracts that is −0.030 × 0.16 ≈ −0.005.
+*   often won by the same firm (about −16% of the mean 0.036). For the HHI of
+*   5 contracts that is −0.030 × 0.15 ≈ −0.005.
 * - It is fragile: not significant on cells with ≥ 5 contracts, and driven by
 *   the first post-reform semester. Unlike 5.4, there is no pre-reform gap
 *   (semester −2: +0.018, SE 0.041).
@@ -3660,7 +3911,7 @@ restore
 * thin (median 2 lots/year), so DiD on market concentration has low power.
 * We report descriptive statistics only.
 *
-* Lots with a blank provincia (34% of lots_winners) are dropped: kept, they
+* Lots with a blank provincia (34% of lots_winners; computed below) are dropped: kept, they
 * formed pseudo-markets of 10,000+ lots per CPV3 × year (e.g. CPV 336,
 * pharmaceuticals) that are not local markets. new_auth_share is the share of
 * lots won by a firm with no earlier-day contract with THAT AUTHORITY; it is
@@ -3673,6 +3924,10 @@ di as text    "========================================"
 use "data/intermediate/lots_winners.dta", clear
 
 gen cpv3_mkt = substr(cod_cpv, 1, 3)
+gen byte _noprov = (provincia == "")
+summarize _noprov, meanonly
+dpost lots_winners_share_blank_province `r(mean)'
+drop _noprov
 
 preserve
 keep if has_award == 1 & provincia != ""
@@ -4930,6 +5185,13 @@ di as text    "  PART 8: EXPORT TABLES"
 di as text    "========================================"
 
 postclose RES
+postclose DESC
+preserve
+use "data/intermediate/_descriptives${SFX}.dta", clear
+export delimited using "results/tables/descriptives${SFX}.csv", replace
+di as text "  wrote results/tables/descriptives${SFX}.csv (" _N " numbers)"
+restore
+erase "data/intermediate/_descriptives${SFX}.dta"
 capture mkdir "results/tables/tex"
 local T "results/tables/tex"
 

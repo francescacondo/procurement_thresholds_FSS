@@ -54,7 +54,8 @@ code/
 data/                          not included in the repository (see "Data")
 results/
   report.md                    main results in Markdown
-  tables/                      CSV outputs; coefficients_p1b.csv holds every reported estimate
+  tables/                      CSV outputs; coefficients_p1b.csv holds every reported estimate,
+                               descriptives_p1b.csv every descriptive number quoted in the text
   tables/tex/                  LaTeX tables written by Part 8
   figures/                     figures
 report_pdf/
