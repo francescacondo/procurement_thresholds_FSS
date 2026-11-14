@@ -12,10 +12,10 @@ Outputs: data/intermediate/net_snapshots/
             manifest.csv
          data/intermediate/net_phase1_focal.dta           (1 row per focal cig)
 
-DEFINITIONS (see docs/net_build_note.md, Phase 1)
+DEFINITIONS
   edge        one award-matched lot with one matched winner (net_edges.dta).
               History = lots PUBLISHED 2015-2023, all values/periods/PNRR
-              (group decision: 2024 publications only in version w24_cpv2_y24).
+              (2024 publications only in version w24_cpv2_y24).
   event date  award_date if present, in [2000-01-01, 2026-12-31] and not more
               than 365 days before pub_date; otherwise pub_date (flag *_timing_fallback = 1). Same rule for
               focal lots and history edges.

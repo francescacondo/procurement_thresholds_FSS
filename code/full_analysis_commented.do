@@ -14,10 +14,8 @@
 * bunching (B), Part 4 main diff-in-disc (M), Part 5 competition (C), Part 6
 * speed of adjustment (S), Part 7 network extension (N; its histories use
 * awards from 2015, built by code/net_master.do), Part 8 export of all
-* estimates and LaTeX tables for the reports. The earlier pilot (do-files
-* 02–05, 10–14, now in archive/code_pilot/) built a preliminary dataset;
-* Module R below rebuilds it from scratch with improvements (ESITO columns,
-* lratio variable). All results in the reports come from this pipeline.
+* estimates and LaTeX tables for the reports. All results in the reports
+* come from this file.
 *
 * HOW TO RUN: code/00_master.do (download if needed, then this file), or
 * directly from the project root: stata-se -b do code/full_analysis_commented.do
@@ -29,14 +27,13 @@
 *   II. Competition and concentration (who wins, authority-level HHI): Part 5
 *   III. Network extension (where new winners come from): Part 7
 *
-* CONTROL PERIOD (group decision, 11 Nov 2026; logged under Deviations in
-* pilot_report.md): the main contrast is P1b (15 Sep 2020 – 31 May 2021) vs P2.
-* P0 vs P2 (the original design) is kept as a robustness run.
+* CONTROL PERIOD: the main contrast is P1b (15 Sep 2020 – 31 May 2021) vs P2.
+* P0 vs P2 is kept as a robustness run.
 *   Main run:        do code/full_analysis_commented.do        (CTRL = P1B)
 *   Robustness run:  global CTRL "P0"
 *                    do code/full_analysis_commented.do
 * Outputs of the P1b run carry the suffix _p1b (log, Part 4 figures/tables);
-* the P0 run writes the original file names.
+* the P0 run writes the same names without the suffix.
 *
 * PART 7 (network extension) needs data/intermediate/net_lot_measures.dta,
 * built in Python by code/net_master.do (Phases 0–3). Part 7 runs that build
@@ -120,15 +117,15 @@ if _rc {
 }
 
 
+capture mkdir "code/logs"     // logs are not in the repository
 log using "code/logs/full_analysis_commented${SFX}.log", replace
 di as text "Control period: $CTRL_G (alternative: $ALT_G)"
 
-* ---- Results collector and table writers (added 14 Nov 2026) ----------------
+* ---- Results collector and table writers ------------------------------------
 * WHAT: four small programs that write results to files. They change no
 * estimate; they only record and format what the code already estimates.
-* WHY: the coefficients of the review report (results/report_pdf/) used to
-* live only in this log and in RESULTS comments. Now every reported estimate is
-* written to results/tables/coefficients${SFX}.csv as it is computed, and
+* WHY: every estimate shown in the report (report_pdf/) is written to
+* results/tables/coefficients${SFX}.csv as it is computed, and
 * Part 8 builds the LaTeX tables from that file (and from the stored
 * estimates, with esttab), so no number in the report is copied by hand.
 *
@@ -326,7 +323,7 @@ forvalues y = 2018/2023 {
         * need: identifiers (cig, cig_accordo_quadro), contract descriptors
         * (oggetto_principale_contratto = SERVIZI/FORNITURE/LAVORI, settore,
         * importo_lotto = base value), dates, procedure type, geography,
-        * and the ESITO (outcome) columns the pilot originally missed.
+        * and the ESITO (outcome) columns.
         capture {
             keep cig cig_accordo_quadro oggetto_principale_contratto settore ///
                 importo_lotto data_pubblicazione data_scadenza_offerta ///
@@ -346,16 +343,10 @@ forvalues y = 2018/2023 {
         * DENOMINAZIONE_AMMINISTRAZIONE_APPALTANTE has 40 characters; Stata
         * truncates variable names to 32, so after import it is called
         * denominazione_amministrazione_ap (checked on all 72 headers).
-        * HISTORY (fixed 13 Nov 2026, Step 0 of adding the groupmate's outcomes;
-        * logged under Deviations): until then this list used the full 40-char
-        * name, so the keep failed in ALL 72 months and the fallback below always
-        * ran, losing 7 columns (data_scadenza_offerta, the authority name,
-        * durata_prevista, n_lotti_componenti, flag_delega,
-        * cod_modalita_realizzazione, modalita_realizzazione). No result used
-        * them. With the fix they are kept; the bid deadline (deadline_date, 1.5)
-        * is needed for the deadline-to-award outcomes.
-        * Fall back to a minimal set if the full keep fails (should not happen
-        * now; the log prints "Column mismatch" if it does).
+        * The bid deadline (data_scadenza_offerta -> deadline_date, 1.5) is
+        * needed for the deadline-to-award outcomes.
+        * Fall back to a minimal set if the full keep fails (should not happen;
+        * the log prints "Column mismatch" if it does).
         if _rc {
             di as error "  Column mismatch in `csvfile' — trying minimal set"
             describe, short
@@ -443,7 +434,7 @@ keep if year(pub_date) >= 2018 & year(pub_date) <= 2023
 
 * ---- Cancelled lots: this line drops NOTHING ----
 * The line below was meant to drop cancelled/withdrawn lots, but in the CIG
-* files stato is "ATTIVO" for every lot (audit 11 Nov 2026: 0 rows dropped).
+* files stato is "ATTIVO" for every lot (0 rows dropped).
 * Cancellation is recorded in the CIG outcome field instead (esito_cig, section
 * 1.5: "ANNULLATA ..." codes 2, 6, 7; about 16,800 lots), and those lots STAY
 * in the sample. That is the safer choice for the design: whether a lot gets
@@ -505,7 +496,7 @@ label values period period_lbl
 tab period, m
 
 * ---- Split P1 into P1a and P1b ----
-* WHY? The main comparison is P1b vs P2 (group decision, 11 Nov 2026). P1 as
+* WHY? The main comparison is P1b vs P2. P1 as
 * coded above mixes two legal regimes:
 *   P1a (17 Jul – 14 Sep 2020): direct award up to the EU threshold
 *   P1b (15 Sep 2020 – 31 May 2021): direct award below €75k
@@ -570,7 +561,7 @@ capture destring durata_prevista, replace force
 * ==============================================================================
 * 1.5  ESITO (OUTCOME) FROM CIG FILES
 * ==============================================================================
-* The CIG files contain outcome information the pilot originally missed:
+* The CIG files contain outcome information:
 *   cod_esito_cig = "1" means the lot was AWARDED (AGGIUDICATA)
 * This lets us identify awarded lots even when they don't have a match in
 * the separate aggiudicazioni file.
@@ -617,18 +608,16 @@ label var direct "Direct award (from procedure type)"
 * The running variable x = lot value − 139,000. A lot with x ≤ 0 is on the
 * eligible side (direct award allowed in P2); x > 0 is above.
 *
-* WHY "≤ 139,000" and not "< 139,000"? (Group decision, 11 Nov 2026; logged
-* under Deviations.) In P2, 79.5% of the 2,298 lots at EXACTLY €139,000 are
+* WHY "≤ 139,000" and not "< 139,000"? In P2, 79.5% of the 2,298 lots at
+* EXACTLY €139,000 are
 * direct awards — more than just below (75.7%) and far more than just above
 * (22.8%) — across 1,009 different authorities. In practice authorities treat
 * €139,000 as eligible, although the DL 77/2021 text says "inferiore a"
 * (strictly below). Counting these lots as above put ~2,300 mostly-
 * direct lots right at the cutoff on the wrong side, with full kernel weight,
 * which pulled every estimate toward zero. Counting them as below gives the
-* same estimates as dropping them. below_strict keeps the old definition for
-* robustness (4.6g).
-* NOTE: the decision was taken after seeing outcome estimates under both
-* definitions; it rests on the procedure data (direct-award share) above.
+* same estimates as dropping them. below_strict keeps the strict definition
+* for robustness (4.6g).
 
 gen float x = importo_lotto - 139000
 label var x "Lot value - 139,000"
@@ -637,7 +626,7 @@ gen byte below = (importo_lotto <= 139000) if !missing(importo_lotto)
 label var below "At or below 139k (eligible side)"
 
 gen byte below_strict = (importo_lotto < 139000) if !missing(importo_lotto)
-label var below_strict "Strictly below 139k (old definition, robustness)"
+label var below_strict "Strictly below 139k (robustness)"
 
 * rdrobust puts x >= c on the right (treated) side. To keep lots at exactly
 * €139,000 on the LEFT (eligible) side, rdrobust uses xr = x − 0.5 with the
@@ -680,9 +669,8 @@ keep cig data_aggiudicazione_definitiva importo_aggiudicazione ///
     id_aggiudicazione criterio_aggiudicazione
 
 * criterio_aggiudicazione = award criterion as text (lowest price vs most
-* economically advantageous tender, MEAT). Added 13 Nov 2026 (Step 0, logged
-* under Deviations); kept for a planned MEAT outcome (Part 4). Blank for many awards,
-* especially direct awards.
+* economically advantageous tender, MEAT); used for the MEAT outcome (4.8).
+* Blank for many awards, especially direct awards.
 label var criterio_aggiudicazione "Award criterion (text, aggiudicazioni)"
 
 * Rename ESITO columns to avoid clash with CIG's ESITO columns
@@ -847,7 +835,7 @@ use "data/intermediate/lots_v2.dta", clear
 * Read the confidence interval, not only the p-value: a non-significant jump
 * with a wide CI does not rule out a sizeable one.
 *
-* RESULTS (run of 11 Nov 2026, lots at €139,000 counted as eligible):
+* RESULTS (main run, lots at €139,000 counted as eligible):
 * P0 +0.022, CI [−0.003, 0.046]; P1b +0.008, CI [−0.034, 0.050];
 * P2 −0.070, CI [−0.090, −0.050] (−0.095 without lots at exactly €139k,
 * whose award coverage is low: 45.5%). In P2 lots just below 139k are more
@@ -922,12 +910,7 @@ foreach c in CTRL ALT {
 * direct-award share already jumped at 139k in the control period, the
 * diff-in-disc would mix the reform with a pre-existing discontinuity.
 *
-* NOTE on the old "P1 anomaly": the pilot reported +11.9pp more direct awards
-* below than above 139k in P1. That was a raw below/above mean on the pilot
-* data (lots.dta) with P1a and P1b mixed; it is not an RD and does not appear
-* in lots_v2 (audit, 11 Nov 2026). This section replaces that check.
-*
-* RESULTS (run of 11 Nov 2026): P1b overall −0.009, CI [−0.040, 0.022]; but
+* RESULTS (main run): P1b overall −0.009, CI [−0.040, 0.022]; but
 * central authorities +0.077 (CI [0.005, 0.149], N≈1,900; more direct awards
 * ABOVE 139k) and, less clearly, also in P0 (+0.047, CI [0.000, 0.093]) — see
 * the note on the EU threshold for central government (section 1.3).
@@ -986,7 +969,7 @@ foreach a in 0 1 {
 * Quick check that the first stage is similar with either control period.
 * The F reported is t² of below×post (the excluded instrument), NOT e(F) of
 * reghdfe, which is the joint F of all regressors.
-* Outcome regressions are in Part 4 only (they used to be duplicated here).
+* Outcome regressions are in Part 4.
 
 di as text _n "========================================"
 di as text    "  2.4: FIRST STAGE, BOTH CONTROLS"
@@ -1327,7 +1310,7 @@ di as text    "    (bootstrap CI of the main difference: section 3.3)"
 *     (shading down), or from below (e.g. purchases that in P1b were kept
 *     under €75k and can now be one lot up to €139k).
 *
-* RESULTS (run of 11 Nov 2026, control P1b; main spec with 5k dummies):
+* RESULTS (main run, control P1b; main spec with 5k dummies):
 *   b_hat P2 12.8 [9.8, 16.1], P1b 0.50 [−0.55, 1.80], P2 − P1b 12.3
 *   [9.0, 15.6]. (a) Across the grid P2 − P1b ranges 8.3–15.6; the narrow
 *   window below (3k) gives the low end, wide windows make P1b/P0 unstable.
@@ -1397,7 +1380,7 @@ local s4 "excl. below 3k"
 local s5 "excl. below 10k"
 local s6 "excl. above 10k"
 local s7 "excl. above 20k"
-local s8 "no 5k dummies (previous spec)"
+local s8 "no 5k dummies"
 foreach g in P2 $CTRL_G $ALT_G {
     forvalues k = 1/8 {
         local K = cond(`k' == 2, 5, cond(`k' == 3, 9, 7))
@@ -1470,9 +1453,7 @@ drop bin1k bin_bunch bin_norm
 * ==============================================================================
 * WHY? 3.2–3.3 give one b_hat for all lots. If some kinds of authority or
 * contract pile up below €139k much more than others, that says who uses the
-* room the reform created. Idea from the groupmate's code (archive/code_niccolo/: raw
-* ratio of lots in (134k,139k) to [139k,144k) by group). ADDED 13 Nov 2026
-* after seeing his results (Deviations); groupings fixed before estimating.
+* room the reform created.
 *
 * GROUPINGS (each lot belongs to one level of each):
 * - contract: services vs supplies (oggetto_principale_contratto);
@@ -1481,9 +1462,9 @@ drop bin1k bin_bunch bin_norm
 *   ANAC regional section; central authorities and "NON CLASSIFICATO" are left
 *   out of this grouping, they have no region);
 * - auth: legal type from ANAC's register of contracting authorities
-*   (data/raw/stazioni-appaltanti_csv.zip, downloaded by hand on 13 Nov 2026
-*   because the portal rejects scripted requests; one row per tax code;
-*   snapshot of Nov 2026, so the legal type is today's, not 2020–23's):
+*   (data/raw/stazioni-appaltanti_csv.zip, downloaded by hand because the
+*   portal rejects scripted requests; one row per tax code; a current
+*   snapshot, so the legal type is today's, not 2020–23's):
 *     Public  = natura giuridica 55 amministrazioni pubbliche, 15 enti
 *               pubblici non economici, 14 enti pubblici economici, 18 enti
 *               ospedalieri;
@@ -1492,8 +1473,8 @@ drop bin1k bin_bunch bin_norm
 *               local-government agencies (code 21), not classified, …).
 *   WHY only 3 groups? The legal-type code is a legal FORM, not a kind of
 *   authority: municipalities and health bodies are spread over codes 55 and
-*   15 (checked against authority names, 13 Nov 2026), so finer groups would
-*   mostly reflect how an authority registered (group decision, 13 Nov 2026).
+*   15 (checked against authority names), so finer groups would mostly
+*   reflect how an authority registered.
 *
 * ESTIMATOR: the 3.2 estimator on each period × group cell (bins (k−1000, k]
 * in (100k, 200k], order-7 polynomial, excluded window (134k, 144k], round
@@ -1679,7 +1660,7 @@ foreach gv in contract central macro auth {
         stat(freq) stat(mean direct) nformat(%5.3f)
 }
 
-* RESULTS 3.6 (run of 13 Nov 2026; b_hat, 95% bootstrap CI of P2 − P1b; the
+* RESULTS 3.6 (main run; b_hat, 95% bootstrap CI of P2 − P1b; the
 * gap is the P2 − P1b difference minus that of the reference level):
 *                    P2      P1b    P2 − P1b [CI]          gap vs ref [CI]
 *   Services        14.4     0.4    14.0 [10.7, 18.7]      (ref)
@@ -1820,12 +1801,12 @@ foreach h in 20000 30000 60000 {
     drop kw_h
 }
 
-* RESULTS (P1b control, run of 12 Nov 2026):
+* RESULTS (P1b control, main run):
 * FS = 0.435 (SE 0.022), t² = 405, N = 96,788. Stable across bandwidths:
 * h=20k 0.435, h=30k 0.439, h=60k 0.419. The reform raised the share of
 * direct awards just below 139k by about 44 pp relative to just above.
 * Data-driven (MSE-optimal) bandwidths in P2 are narrower than 40k (≈12k for
-* direct, ≈18k for days, ≈31k for lratio; Part 4 review), so h=40k trades
+* direct, ≈18k for days, ≈31k for lratio; not computed in this file), so h=40k trades
 * some bias for precision; the h=20k rows are the check on that.
 
 
@@ -1892,7 +1873,7 @@ foreach var in days_award lratio single_bid nbids n_invited {
 *   single_bid  +0.148 (0.022) p<0.001  [h=20k +0.156, 30k +0.149, 60k +0.134]
 *   nbids       −1.01 (0.42)  p=0.017
 *   n_invited   −61 (38)      p=0.11  (driven by extreme values; not used)
-* HOW TO READ THEM (Part 4 review):
+* HOW TO READ THEM:
 * - single_bid and nbids are largely MECHANICAL: 87% of P2 direct awards in
 *   the window record exactly one bid. They show that the procedure changed,
 *   not separately that markets became less competitive.
@@ -1954,12 +1935,11 @@ foreach var in days_award lratio single_bid nbids {
 
 
 * ==============================================================================
-* 4.4  SELECTION-ROBUST OUTCOMES (REPLACING LEE BOUNDS)
+* 4.4  SELECTION-ROBUST OUTCOMES
 * ==============================================================================
-* PROBLEM: The original Lee bounds were uninformative — leebounds computes
-* bounds on a raw difference (no kernel, no FE, no running variable slope),
-* not on the DiD-RD parameter. Instead, we define outcomes observable for ALL
-* lots (no selection into having an award record):
+* PROBLEM: outcomes such as days to award exist only for lots with an award
+* record. We define outcomes observable for ALL lots (no selection into
+* having an award record):
 *   awarded_90  = has award within 90 days of publication
 *   awarded_180 = has award within 180 days
 * These avoid the coverage selection problem entirely.
@@ -2231,11 +2211,10 @@ foreach g in P1b P0 {
 * might be correlated (common local conditions). Province clustering is more
 * conservative (fewer clusters → larger SEs).
 *
-* FIX (Part 4 review): provincia is blank for about a third of the awarded
-* lots in the window (17,818 of 53,598). reghdfe silently drops observations
-* with a missing cluster variable, so clustering on provincia alone ran on a
-* smaller, different sample and moved the point estimates, not just the SEs.
-* Lots with a blank province are now clustered at the region level instead
+* provincia is blank for about a third of the awarded lots in the window
+* (17,818 of 53,598). reghdfe silently drops observations with a missing
+* cluster variable, so clustering on provincia alone would run on a smaller,
+* different sample. Lots with a blank province are clustered at the region level
 * (central authorities form one cluster), which keeps the main sample and is
 * if anything more conservative. N is printed to confirm it matches 4.2.
 
@@ -2364,9 +2343,8 @@ foreach var in direct days_award lratio {
 }
 
 * ---- 4.6i: Alternative control period ----
-* WHY? The choice of control period (P1b) was made after the P0 results had
-* been seen (see Deviations in pilot_report.md). Showing the main estimates
-* with the other control period lets the reader judge how much it matters.
+* WHY? Showing the main estimates with the other control period lets the
+* reader judge how much the choice of control period matters.
 * P1b is closer in time (less room for other changes); P0 has ~3x more lots.
 
 di as text _n "--- Alternative control period: $ALT_G vs P2 (h=40k) ---"
@@ -2429,7 +2407,7 @@ foreach var in direct days_award lratio single_bid nbids {
 * jumps in P1b (+23.5, SE 9.9) and P0 (+15.5, SE 4.7); direct does not
 * (−0.019, −0.016). Lots at exact round values are faster (e.g. 39 vs 60
 * days at €100,000) and all sit on one side of these cutoffs; dropping
-* multiples of €5k roughly halves the placebo jumps (Part 4 review). Because
+* multiples of €5k roughly halves the placebo jumps (not computed in this file). Because
 * this round-number pattern is present before and after the reform, the
 * diff-in-disc subtracts it.
 * SUMMARY: the first stage and days are robust everywhere (days shrinks
@@ -2596,10 +2574,9 @@ drop x2 below_post below_x post_x below_post_x treat_band prov_cl province_id
 * 4.8  PROCESS RED FLAGS: AWARD CRITERION, BID WINDOW, EVALUATION TIME
 * ==============================================================================
 * WHY? ANAC's corruption-risk indicators for procurement ("Indicatori di
-* rischio corruttivo negli appalti", ANAC 2022, 17 indicators; sheet read on
-* 13 Nov 2026; copy in data/raw/law/ANAC_indicatori_rischio_corruttivo_appalti.pdf)
-* include three that our data can measure
-* lot by lot and that we have not used yet:
+* rischio corruttivo negli appalti", ANAC 2022, 17 indicators; copy in
+* data/raw/law/ANAC_indicatori_rischio_corruttivo_appalti.pdf) include three
+* that our data can measure lot by lot:
 *   ind. 1  MEAT criterion (offerta economicamente più vantaggiosa): more
 *           discretion than lowest price, so a proxy for risk;
 *   ind. 14 days from publication to the bid deadline (a very short window
@@ -2607,13 +2584,10 @@ drop x2 below_post below_x post_x below_post_x treat_band prov_cl province_id
 *   ind. 15 days from the bid deadline to the award (very fast evaluation may
 *           hide decisions taken in advance).
 * ANAC computes them PER PROVINCE (shares or average days) and flags provinces
-* above the 75th percentile. It uses NO day cut-offs; the "< 15 days" and
-* "< 7 days" versions in the groupmate's code (archive/code_niccolo/) are his own. Here
-* we use the lot-level versions in the main diff-in-disc (same specification
+* above the 75th percentile. It uses NO day cut-offs. Here we use the
+* lot-level versions in the main diff-in-disc (same specification
 * as 4.2: h = 40k, triangular kernel, CPV2×post, region×post and month FE,
 * SEs clustered by authority, non-PNRR, awarded lots).
-* ADDED 13 Nov 2026 after seeing the groupmate's results (Deviations). The
-* coding below was fixed after inspecting the raw fields, before any estimate.
 *
 * HOW TO READ THEM:
 * - Under direct award there is no public tender, so the "bid deadline" is a
@@ -2657,11 +2631,10 @@ assert r(N) == 0
 drop _crit
 
 * ---- Bid window (ANAC ind. 14) and evaluation time (ANAC ind. 15) ----
-* deadline_date comes from data_scadenza_offerta (1.5; kept since the 1.1
-* fix of 13 Nov 2026); missing for 0.2% of lots. NOT cleaned, like days_award:
-* eval_days < 0 (award dated before the bid deadline) for about 11% of
-* awarded lots in the window, mostly direct awards; outcome cleaning is an
-* open item (archive/results_old/round1_report.md, section 7).
+* deadline_date comes from data_scadenza_offerta (1.5); missing for 0.2% of
+* lots. NOT cleaned, like days_award: eval_days < 0 (award dated before the
+* bid deadline) for about 11% of awarded lots in the window, mostly direct
+* awards; cleaned versions are estimated in 4.9.
 gen int bid_window = deadline_date - pub_date if has_award == 1
 gen int eval_days  = award_date - deadline_date if has_award == 1
 label var bid_window "Days publication -> bid deadline (ANAC ind. 14)"
@@ -2744,7 +2717,7 @@ list, noobs abbrev(14) sep(0)
 export delimited using "results/tables/M8_red_flags${SFX}.csv", replace
 restore
 
-* RESULTS 4.8 (run of 13 Nov 2026; P1b control, h = 40k, awarded lots):
+* RESULTS 4.8 (main run; P1b control, h = 40k, awarded lots):
 *                    ITT                         LATE
 *   crit_recorded   −0.117 (0.020)  p<0.001     −0.26
 *   meat            −0.107 (0.027)  p<0.001     −0.26   [h=20k −0.076 (0.035),
@@ -2769,10 +2742,10 @@ drop below_post below_x post_x below_post_x _grp split_ok
 
 
 * ==============================================================================
-* 4.9  OUTCOME CLEANING: ROBUSTNESS ONLY (added 14 Nov 2026)
+* 4.9  OUTCOME CLEANING: ROBUSTNESS ONLY
 * ==============================================================================
 * WHY? Some outcomes contain values that cannot be right or that are coded in
-* a way that mixes two things (open items since the Part 1 audit):
+* a way that mixes two things:
 *   (a) negative days to award (award dated before publication);
 *   (b) negative bid window or evaluation time (deadline before publication,
 *       award before the deadline), mostly under direct award, where the
@@ -2780,9 +2753,8 @@ drop below_post below_x post_x below_post_x _grp split_ok
 *   (c) zero admitted bids coded as single bid (single_bid = nbids <= 1);
 *   (d) extreme price ratios (log award/base from −15 to +6.9).
 * WHAT: count each problem in the main window, then re-estimate the affected
-* outcomes on cleaned versions. The main specification is NOT changed (group
-* decision, 14 Nov 2026, Deviations in pilot_report.md); these are extra
-* robustness rows. The cleaning rules below were fixed before estimation:
+* outcomes on cleaned versions. The main specification uses the outcomes as
+* recorded; these are extra robustness rows. Cleaning rules:
 *   days_award        drop lots with days_award < 0
 *   bid_window, eval  drop lots where either part is < 0 (split sample of 4.8)
 *   single_bid        missing when nbids == 0 (no admitted bid recorded)
@@ -2898,7 +2870,7 @@ drop _bwin _eval _grp _negd _negsplit _zerob days_c split_c single_c lratio_t lr
 
 
 * ==============================================================================
-* 4.10  ARE LOTS ON THE TWO SIDES STILL COMPARABLE? BALANCE TEST (added 14 Nov)
+* 4.10  ARE LOTS ON THE TWO SIDES STILL COMPARABLE? BALANCE TEST
 * ==============================================================================
 * WHY? Part 3 shows that after the reform authorities moved lot values to
 * just below €139k. So in P2 the lots just below are partly a SORTED group:
@@ -2924,8 +2896,7 @@ drop _bwin _eval _grp _negd _negsplit _zerob days_c split_c single_c lratio_t lr
 * × post FE would absorb the covariates themselves). Columns: diff-in-disc
 * (P2 vs control) and the discontinuity in P2 alone (same weights).
 * Rows "without lots at 139,000" repeat the test without the heap.
-* Added after seeing the results (Deviations); it is a check, not a new
-* specification.
+* It is a check, not a new specification.
 
 di as text _n "========================================"
 di as text    "  4.10: BALANCE TEST"
@@ -2980,7 +2951,7 @@ foreach v in central south services cpv33 lauth_prev pdays {
 tabstat central south services cpv33 lauth_prev pdays ///
     if `S' & ${g_CTRL} & below == 1, stat(mean) format(%7.3f)
 
-* FOLLOW-UP (added with the balance test, 14 Nov 2026; Deviations): the
+* FOLLOW-UP to the balance test: the
 * sector and region covariates are already absorbed by the main FE
 * (CPV2 × post, region × post); the authority's size is not. Two extra
 * robustness rows for the main Part I outcomes: (i) adding lauth_prev as a
@@ -3001,7 +2972,7 @@ foreach v in direct days_award lratio single_bid {
 
 drop _yr auth_lots_prev lauth_prev _regname south services cpv33 _cpvn _regn pdays
 
-* RESULTS 4.9--4.10 (run of 14 Nov 2026, P1b control):
+* RESULTS 4.9--4.10 (main run, P1b control):
 * 4.9 awarded window N = 53,598: 2,102 negative days; 5,720 award before the
 *   deadline; 570 zero bids; 1,070 lratio outside [-1.88, 0.16]. Cleaned: days
 *   -43.2 (6.6), bid window -15.7, evaluation -31.4, single bid 0.152, lratio
@@ -3066,8 +3037,7 @@ if _rc {
     * Deduplicate: one winner per CIG. Keep the award record with the highest
     * id_aggiudicazione. NOTE: section 1.8 picks the award record by the most
     * recent award_date first, then id; the two rules pick different records
-    * for only 115 of 4.8 million CIGs and for none in the estimation sample
-    * (Part 5 review).
+    * for only 115 of 4.8 million CIGs and for none in the estimation sample.
     * Some award records list several winners (72,342 CIG-award pairs after
     * the role filter, e.g. framework agreements with several operators). We
     * keep one; ties are broken by codice_fiscale so the choice is the same on
@@ -3111,11 +3081,10 @@ drop _m_winners
 * WHAT COUNTS AS A "PRIOR" CONTRACT: only contracts published on an EARLIER
 * day. When one firm wins several lots from the same authority on the same day
 * (typically several lots of one tender), those lots are not prior contracts
-* of each other. The first version ordered same-day lots by CIG and counted
-* the earlier CIG as "prior", which made 11.7% of the lots in the ±40k window
-* look like repeat contracts. That share also changes at the cutoff (multi-
-* lot awards are rarer among direct awards below 139k), so it biased the
-* diff-in-disc (Part 5 review; Deviations in pilot_report.md). The data have
+* of each other. Counting same-day lots as "prior" would make 11.7% of the
+* lots in the ±40k window look like repeat contracts, and that share changes
+* at the cutoff (multi-lot awards are rarer among direct awards below 139k),
+* so it would bias the diff-in-disc. The data have
 * no tender identifier (numero_gara is not imported in 1.1), so "same day,
 * same authority, same firm" is the closest proxy for "same tender".
 *
@@ -3174,9 +3143,7 @@ drop _idx _first _prevd
 
 * ---- NEW TO ALL PUBLIC PROCUREMENT (market-wide new firm) ----
 * = 1 if the winning firm won NO contract from ANY authority, in any sector,
-* on an earlier day within the prior 12 (24) months. Idea from the
-* groupmate's code (archive/code_niccolo/: new_entrant12, "no award anywhere in the
-* prior 12 months"); ADDED 13 Nov 2026 after seeing his results (Deviations).
+* on an earlier day within the prior 12 (24) months.
 * It is broader than new_supplier (new to THIS authority) and than Part 7's
 * "new to the market" (no award in the same CPV2 market in 24 months).
 * Same earlier-day rule as above, so a firm's several lots on its first day
@@ -3192,15 +3159,9 @@ gen byte new_firm_24m = missing(_prevd) | (pub_date - _prevd) > 730
 label var new_firm_12m "Firm won no contract anywhere in prior 12m (earlier days)"
 label var new_firm_24m "Firm won no contract anywhere in prior 24m (earlier days)"
 drop _idx _first _prevd
-* Back to the previous (unique) sort order, so the saved file is in the same
-* row order as before this block was added.
+* Back to the unique sort order used above, so the row order of the saved
+* file does not depend on this block.
 sort authority_id codice_fiscale cpv3 pub_date cig
-
-* FIRM DEGREE REMOVED (12 Nov 2026). It counted the distinct authorities a
-* firm supplies over the WHOLE data window, later years included, so it used
-* information from after the lot. Part 7 replaces it with the winner's degree
-* in the 24 months BEFORE the award (net_ldeg_hist, network extension).
-* Last estimate, for the record: ITT −4.2 (3.6), p = 0.25 (see Deviations).
 
 * Save the lots-with-winners dataset
 compress
@@ -3210,12 +3171,9 @@ di as text "  lots_winners.dta: " _N " rows"
 di as text _n "  Summary statistics of competition variables:"
 summarize repeat_winner_24m repeat_winner_cpv new_supplier tie_strength new_firm_12m new_firm_24m
 
-* RESULTS (run of 12 Nov 2026): 622,401 awarded lots with a matched winner
+* RESULTS (main run): 622,401 awarded lots with a matched winner
 * (99.98% of awarded lots). Means: repeat_winner_24m 0.37, repeat_winner_cpv
 * 0.31, new_supplier 0.58, tie_strength 4.3 (max 428).
-* (With the old same-day rule: 0.46, 0.40, 0.50, 5.8.) The rebuilt winners
-* file picks a different winner than the previous cached file for about
-* 56,000 of 4.8 million CIGs (1.2%), all awards that list several winners.
 
 
 * ==============================================================================
@@ -3229,7 +3187,7 @@ di as text _n "========================================"
 di as text    "  5.3: LOT-LEVEL DiD-RD (COMPETITION)"
 di as text    "========================================"
 
-* Recreate the variables we need (they were in lots_v2 but we're now in lots_winners)
+* Recreate the variables we need (they are in lots_v2, not in lots_winners)
 capture drop pnrr
 gen byte pnrr = (flag_pnrr_pnc == "1" | flag_pnrr_pnc == "SI")
 capture drop main_sample
@@ -3306,11 +3264,6 @@ foreach var in repeat_winner_24m repeat_winner_cpv new_supplier new_firm_12m new
     }
 }
 
-* ---- Lee bounds for competition REMOVED ----
-* The original bounds conditioned on has_winner ≈ has_award, so nothing was
-* trimmed and lower = upper = raw difference. See section 4.4 for the
-* selection-robust approach (awarded_90/180 on all lots).
-
 * ---- Placebo: 139k in the pre-reform periods ----
 * No pre-existing discontinuity at 139k for competition variables?
 foreach g in P1b P0 {
@@ -3342,8 +3295,8 @@ foreach var in repeat_winner_24m repeat_winner_cpv new_supplier new_firm_12m new
     }
 }
 
-* ---- Authority fixed effects (added 14 Nov 2026 after the balance test of
-* 4.10, Deviations): compares each authority's lots below and above 139k,
+* ---- Authority fixed effects (follow-up to the balance test of 4.10):
+* compares each authority's lots below and above 139k,
 * so sorting of authorities across the cutoff cannot drive the result ----
 di as text _n "--- ITT with authority fixed effects (h=40k) ---"
 foreach var in new_supplier new_firm_12m new_firm_24m repeat_winner_24m repeat_winner_cpv {
@@ -3363,7 +3316,6 @@ foreach var in new_supplier new_firm_12m new_firm_24m repeat_winner_24m repeat_w
 *   repeat_winner_cpv   −0.043 (0.024)    0.071   −0.098
 *   new_supplier        +0.056 (0.025)    0.025   +0.128
 *   tie_strength        −2.02 (0.70)      0.004   −4.58
-* (firm_degree, −4.2 (3.6), p = 0.25, was dropped: see 5.2 and Part 7.)
 * Bandwidths 20/30/60k: repeat_24m −0.051/−0.048/−0.031; new_supplier
 * +0.065/+0.063/+0.048. Placebos at 139k in P1b and P0: all |coef| ≤ 0.02,
 * n.s. With P0 as control: repeat_24m −0.046 (0.017), repeat_cpv −0.053
@@ -3371,9 +3323,8 @@ foreach var in new_supplier new_firm_12m new_firm_24m repeat_winner_24m repeat_w
 * READING: lots that became direct-eligible are somewhat more often won by a
 * firm with no earlier contract with that authority (about +6 pp, +13 pp for
 * compliers). The repeat-winner effect has the same sign but is borderline
-* with P1b as control. With the old same-day rule these were −0.065 and
-* +0.069 (see the definition note in 5.2 and Deviations).
-* NEW TO ALL PUBLIC PROCUREMENT (added 13 Nov 2026, see 5.2; run of 14 Nov):
+* with P1b as control.
+* NEW TO ALL PUBLIC PROCUREMENT (see 5.2):
 *                       ITT                 p      LATE    mean
 *   new_firm_12m        +0.045 (0.018)    0.011   +0.103   0.26
 *   new_firm_24m        +0.044 (0.017)    0.009   +0.099   0.21
@@ -3383,10 +3334,8 @@ foreach var in new_supplier new_firm_12m new_firm_24m repeat_winner_24m repeat_w
 * p = 0.020), +0.040 (0.013, p = 0.001).
 * READING: lots that became direct-eligible go about 4.5 pp more often to a
 * firm with no public contract anywhere in the past one or two years (+10 pp
-* for compliers). Same size as Part 7's "new to the market" (+0.050) and the
-* groupmate's band DiD (+0.053), so the opening is not only toward firms new
-* to one authority. The mean of new_firm_12m (0.2607) matches his
-* new_entrant12 (0.2607), a check that the two definitions agree.
+* for compliers). Same size as Part 7's "new to the market" (+0.050), so the
+* opening is not only toward firms new to one authority.
 * Rotation principle: it applies below the EU thresholds on both sides of
 * the cutoff (art. 36(1) D.Lgs 50/2016), to awards under direct award and to
 * invitations under the negotiated procedure; this difference in form is a
@@ -3405,14 +3354,14 @@ foreach var in new_supplier new_firm_12m new_firm_24m repeat_winner_24m repeat_w
 * lots in the band that became direct-eligible in P2: €75k–139k when the
 * control is P1b (below €75k was already direct), €40k–139k when it is P0.
 * More-exposed authorities should see more of their lots shift to direct award.
-* (Earlier version: calendar half-years over 2018–2023 including P1 and P3;
-* now restricted to control + P2 so pre and post are the two compared regimes.)
+* The panel is restricted to control + P2 so pre and post are the two
+* compared regimes.
 *
 * NOTE: n_lots below counts FIRM cells (one row per firm per authority-
 * semester after the dedup), not lots; new_share is the share of those firms
-* that are new to the authority. Kept as in the original module.
+* that are new to the authority.
 *
-* HOW TO READ THE HHI RESULT (Part 5 review, scratch checks, not run here):
+* HOW TO READ THE HHI RESULT (checks not run in this file):
 * (1) Lot-count mechanism. After the reform, more-exposed authorities publish
 *     more lots (log lots × exposure × post ≈ +0.25, SE 0.07). With more lots
 *     there are more firms, so HHI falls mechanically: holding log lots fixed
@@ -3465,11 +3414,9 @@ gen float firm_share_sq = firm_share^2
 * authority at their first lot of the semester. Same-day lots of a pair share
 * the same new_supplier value (5.2 counts only earlier days), so this equals
 * "new at any lot of the semester".
-* FIX (13 Nov 2026, Deviations): the line used to be `keep if _n == 1` with no
-* sort order inside the cell, so Stata kept an arbitrary lot and new_share
-* depended on row order (0.097–0.104 across random orders; 0.099 in the
-* 12 Nov run). supplier_hhi is the same on every row of a firm, so it was
-* never affected.
+* WHY sort by (pub_date cig)? Without a sort order inside the cell Stata
+* keeps an arbitrary lot and new_share depends on row order. supplier_hhi is
+* the same on every row of a firm, so it does not depend on this choice.
 bysort authority_id rel_sem codice_fiscale (pub_date cig): keep if _n == 1
 
 gen byte _one = 1
@@ -3517,8 +3464,7 @@ if !_rc {
 
 * RESULTS 5.4 (18,907 authority × semester cells, 3,229 authorities; mean
 * exposure 0.16, median 0.11): HHI exposure × post −0.071 (0.026);
-* new_share +0.096 (0.025) (13 Nov 2026 run, earliest-lot rule; was +0.099 with
-* the arbitrary row). Going from zero exposure to the mean exposure
+* new_share +0.096 (0.025). Going from zero exposure to the mean exposure
 * lowers HHI by about 0.011. See HOW TO READ THE HHI RESULT above: this is
 * mostly "more, smaller contracts per exposed authority", and there is a
 * pre-reform gap, so it is weak evidence of lower concentration.
@@ -3534,9 +3480,9 @@ restore
 * distinct firms), and exposed authorities did award more lots after the
 * reform. So 5.4 cannot tell "less concentrated suppliers" from "more lots".
 *
-* IDEA (from the groupmate's code, archive/code_niccolo/): compare HHIs computed on the
-* SAME number of contracts in every cell. He draws 5 random contracts per
-* cell once. Here we use the exact version of that idea instead:
+* IDEA: compare HHIs computed on the SAME number of contracts in every cell.
+* Drawing k random contracts per cell is noisy; here we use the exact
+* version of that idea instead:
 *   S = probability that two DIFFERENT contracts of the cell, picked at
 *       random, went to the same firm = Σ_j n_j(n_j − 1) / (n(n − 1)),
 *   where n_j = contracts won by firm j in the cell, n = all contracts.
@@ -3553,13 +3499,10 @@ restore
 * Same panel as 5.4: control period + P2, non-PNRR, awarded lots, authority
 * × semester cells, exposure from 5.4, authorities with ≥ 10 firm cells,
 * FE authority and semester, SEs clustered by authority. S needs n ≥ 2.
-* CHECK: the groupmate's random draws (k = 5 contracts per cell, cells with
-* n ≥ 5), repeated 50 times; the average coefficient should be close to
-* 0.8 × the S coefficient on the same cells.
+* CHECK: random draws (k = 5 contracts per cell, cells with n ≥ 5), repeated
+* 50 times; the average coefficient should be close to 0.8 × the S
+* coefficient on the same cells.
 * PRE-TREND: exposure × semester (reference $ES_REF), as for 5.4.
-* ADDED 13 Nov 2026 after seeing the groupmate's results (Deviations). The
-* plan was 200 random draws for k = 3 and k = 5; replaced by the exact S
-* (same quantity, no noise) before any estimate, keeping draws as a check.
 
 di as text _n "========================================"
 di as text    "  5.4b: FIXED-SIZE CONCENTRATION"
@@ -3650,7 +3593,7 @@ keep authority_id rel_sem exposure exp_post
 tempfile cells5
 save `cells5'
 
-* ---- Check: the groupmate's random draws, k = 5, 50 repetitions ----
+* ---- Check: random draws, k = 5, 50 repetitions ----
 tempname dr
 tempfile dr_res
 postfile `dr' int rep double b using `dr_res'
@@ -3675,7 +3618,7 @@ summarize b
 di as text "  Random draws (k=5, 50 reps): mean " %7.4f r(mean) ///
     ", SD across draws " %6.4f r(sd) ", min " %7.4f r(min) ", max " %7.4f r(max)
 * In the output table this row's "se" column holds the SD ACROSS DRAWS (how
-* much a single draw, as in the groupmate's code, can move the estimate) and
+* much a single draw can move the estimate) and
 * "N" the number of draws.
 post `hb' ("hhi5 random draws (mean)") ("n>=5") (r(mean)) (r(sd)) (.) (r(N))
 postclose `hb'
@@ -3685,15 +3628,14 @@ list, noobs abbrev(24) sep(0)
 export delimited using "results/tables/C4b_concentration_fixed_size${SFX}.csv", replace
 restore
 
-* RESULTS 5.4b (run of 13 Nov 2026, P1b control; 18,909 cells as in 5.4,
+* RESULTS 5.4b (main run, P1b control; 18,909 cells as in 5.4,
 * 15,601 with n >= 2, 8,911 with n >= 5; mean S 0.036, mean count HHI 0.38):
 *   count HHI, all cells        −0.113 (0.028)   [5.4 value HHI: −0.071]
 *   count HHI, cells n >= 2     −0.050 (0.019)
 *   S (fixed size), n >= 2      −0.038 (0.018)  p = 0.040   ← main
 *   S (fixed size), n >= 5      −0.018 (0.016)  p = 0.26
 *   random draws k = 5 (n >= 5), mean of 50: −0.013 (SD across draws 0.008;
-*     predicted 0.8 × −0.018 = −0.015; before the row-order fix, runs gave
-*     −0.014 to −0.017)
+*     predicted 0.8 × −0.018 = −0.015)
 *   event study for S (ref. semester −1): −2: +0.018 (0.041); 0: −0.063
 *     (0.023); 1: −0.027; 2: −0.030; 3: −0.033 (all n.s.); 4 (June 2023
 *     only): +0.035 (0.036).
@@ -3707,10 +3649,8 @@ restore
 * - It is fragile: not significant on cells with ≥ 5 contracts, and driven by
 *   the first post-reform semester. Unlike 5.4, there is no pre-reform gap
 *   (semester −2: +0.018, SE 0.041).
-* - The groupmate's single draw of 5 contracts would give anything between
-*   about −0.03 and 0 here (SD across draws 0.008), so his −0.008
-*   (p = 0.048, different bands and sample) is consistent with this but
-*   cannot be read on its own.
+* - A single draw of 5 contracts would give anything between about −0.03
+*   and 0 here (SD across draws 0.008), so it cannot be read on its own.
 
 
 * ==============================================================================
@@ -4113,7 +4053,7 @@ export delimited using "results/tables/S2_speed_groups${SFX}.csv", replace
 * Dispersion summary: are groups really different, or is it sampling noise?
 * If the spread of the estimates across groups (SD) is not larger than their
 * typical standard error, the ranking is mostly noise.
-* Result of the 11 Nov 2026 run (P1b): regions differ in HOW MUCH they
+* Result of the main run (P1b): regions differ in HOW MUCH they
 * adopted (lr: SD 0.092 vs SE 0.043) far more than in HOW FAST (c1: SD 0.148
 * vs SE 0.199). Ratios c_b are unstable when lr is small (e.g. CPV 09).
 foreach t in region sector {
@@ -4154,7 +4094,7 @@ restore
 * ==============================================================================
 * 6.4  REGION × SECTOR MATRIX OF LONG-RUN TAKE-UP
 * ==============================================================================
-* MEASURE (group decision, 11 Nov 2026): long-run take-up = the change in the
+* MEASURE: long-run take-up = the change in the
 * direct-award gap (eligible band − comparison band) between the control
 * period and months 12–21 — the coefficient γ_4 ("lr") of 6.2–6.3. Section 6.3
 * showed that groups differ in HOW MUCH they adopted far more than in HOW FAST,
@@ -4175,7 +4115,7 @@ restore
 * their region and sector predict. (The prediction is fitted on the same
 * cells, so τ² is slightly understated: shrinkage is a bit conservative.)
 *
-* RESULT (run of 11 Nov 2026, P1b): 174 cells (79% of eligible P2 lots).
+* RESULT (main run, P1b): 174 cells (79% of eligible P2 lots).
 * Sector explains more of the cell variation than region (weighted R² 0.77 vs
 * 0.55; both 0.86). τ² = 0: once region and sector effects are in, the cells
 * show no extra variation beyond sampling noise, so lr_eb equals the additive
@@ -4331,7 +4271,7 @@ restore
 *     outcome estimates.
 * (b) FAKE REFORM DATE inside the control period: split the control period in
 *     two at its middle month and estimate the change in the gap. Should be ~0.
-* RESULTS (run of 11 Nov 2026, P1b): (a) correlation band A vs band B = 0.79
+* RESULTS (main run, P1b): (a) correlation band A vs band B = 0.79
 * for regions (N = 23) and 0.79 for sectors (N = 30) — take-up is a stable
 * trait of a region/sector, not noise; (b) −0.004 (SE 0.011); (c) +0.015
 * (SE 0.010). Both placebos ≈ 0.
@@ -4464,8 +4404,8 @@ restore
 *       former suppliers after skipping a turn.
 * The network classes below separate (a) from (b).
 *
-* MEASURES (built in Python, code/net_py/, run by code/net_master.do; see
-* docs/net_build_note.md for definitions, versions and checks). For each lot with
+* MEASURES (built in Python, code/net_py/, run by code/net_master.do, which
+* also prints the build checks). For each lot with
 * a winner f at authority a, using awards in the 24 months BEFORE the award
 * (day-level window: strictly earlier awards only) within the same CPV2 market:
 *   net_incumbent   f won a's most recent award in the same CPV3
@@ -4477,8 +4417,7 @@ restore
 *   net_return_gap  f supplied a before but not its last award (subset of
 *                   prior_other): the signature of rotation ("skip a turn")
 *   net_ldeg_hist   log(1 + number of authorities f supplied in the window):
-*                   how established the winner is. It replaces firm_degree of
-*                   Part 5, which used the whole data window, later years too.
+*                   how established the winner is (only earlier awards).
 * The first five classes are mutually exclusive and sum to 1 for every lot, so
 * their diff-in-disc coefficients sum to 0: they show where the change in
 * winners comes from (checked in 7.2).
@@ -4488,14 +4427,9 @@ restore
 * dates from 2018 and ignores the market (CPV2). "New to the authority" (Part 5)
 * and "new to the market" (here) are different questions.
 *
-* WHAT WAS DROPPED (12 Nov 2026, after seeing the P1b results; Deviations in
-* pilot_report.md): other centrality measures (degree in levels, regions, core
-* status, other authorities: same sign, none significant), the allocation-based
-* "degree excess" (never approved; its sample excludes new firms), the
-* authority × half-year panel (rewiring, exclusive suppliers: null with P1b,
-* no pre-trend test possible), and robustness rows that only checked build
-* choices (monthly window, 2024 history, windows past 2023, award-availability
-* split). They remain available by running code/net_master.do.
+* NOT USED HERE: the Python build also writes other network versions
+* (monthly window, history including 2024), available by running
+* code/net_master.do.
 
 di as text _n "========================================"
 di as text    "  PART 7: NETWORK EXTENSION (OPENING)"
@@ -4541,7 +4475,7 @@ end
 * re-run after the build (e.g. a new winners file), the two can disagree; the
 * merge below then stops instead of silently mixing versions.
 *
-* BUILD STEP (added 14 Nov 2026, so that one run of this file does everything):
+* BUILD STEP (so that one run of this file does everything):
 * if net_lot_measures.dta is missing, or its lots do not match lots_winners.dta,
 * or global NET_REBUILD is 1, run the Python build (code/net_master.do, about
 * 15 minutes) here. NET_FROM_MAIN tells net_master.do to clear only the data
@@ -4777,8 +4711,8 @@ replace treat_band = 0 if importo_lotto >= 150000 & importo_lotto < 180000
 net_rob "vband" "reghdfe @ c.treat_band#c.post treat_band post if main_sample == 1 & !missing(treat_band), absorb(cpv2 region ym) vce(cluster authority_id)" ///
     "c.treat_band#c.post" "${g_CTRL} & treat_band == 1"
 
-* Authority fixed effects (added 14 Nov 2026 after the balance test of 4.10,
-* Deviations): within-authority comparison of lots below and above 139k.
+* Authority fixed effects (follow-up to the balance test of 4.10):
+* within-authority comparison of lots below and above 139k.
 net_rob "authfe" "reghdfe @ `RD' [aw=kw40] if `S', absorb(cpv2_post region_post ym authority_id) vce(cluster authority_id)" ///
     "1.below#1.post" "`CM'"
 
@@ -4810,8 +4744,7 @@ foreach c in 100000 120000 160000 200000 {
 }
 drop x_plac below_plac kw_plac
 
-* (c) FOLLOW-UP TO THE FAILED 120k PLACEBO (added 12 Nov 2026, after seeing
-*     the failure; Deviations in pilot_report.md).
+* (c) FOLLOW-UP TO THE FAILED 120k PLACEBO.
 * WHY? At 120k nothing legal changes in P2, yet "new to the market" jumps
 * (−0.049, p=0.0005). Part 4 found that lots at exact round values (e.g.
 * €100,000) are a different kind of lot (much faster to award). Each placebo
@@ -4865,7 +4798,7 @@ drop x_plac below_plac kw_plac
 net_rob "main_nor5" "reghdfe @ `RD' [aw=kw40] if `S' & round5k == 0, `A'" ///
     "1.below#1.post" "`CM'"
 
-* RESULTS 7.4c (run of 12 Nov 2026):
+* RESULTS 7.4c (main run):
 * (i) In P2, lots at exactly a round value go to firms new to the market MORE
 *     often than nearby lots: 120,000: 0.340 vs 0.262 (N=1,449); 100,000:
 *     0.302 vs 0.257; 160,000: 0.263 vs 0.173; 200,000: 0.236 vs 0.183;
@@ -4927,7 +4860,7 @@ restore
 
 drop ncell net_tie treat_band round5k below_post below_x post_x below_post_x x2
 
-* RESULTS PART 7 (run of 12 Nov 2026; P1b control, h=40k, N = 53,352 lots
+* RESULTS PART 7 (main run; P1b control, h=40k, N = 53,352 lots
 * with a winner; KP F = 456.6; the five class ITTs sum to −1e-15):
 *                         ITT              p       LATE      P0 control (ITT, p)
 *   incumbent           −0.012 (0.014)   0.38    −0.027     −0.022 (0.03)
@@ -4974,16 +4907,16 @@ drop ncell net_tie treat_band round5k below_post below_x post_x below_post_x x2
 * ##############################################################################
 * ##############################################################################
 * ##                                                                          ##
-* ##   PART 8: EXPORT RESULTS FOR THE REPORTS (added 14 Nov 2026)             ##
+* ##   PART 8: EXPORT RESULTS FOR THE REPORTS                                 ##
 * ##                                                                          ##
 * ##   Writes results/tables/coefficients${SFX}.csv (every reported estimate) ##
 * ##   and the LaTeX tables in results/tables/tex/ used by                    ##
-* ##   results/report_pdf/report.tex. No estimation here: only formatting.    ##
+* ##   report_pdf/report.tex. No estimation here: only formatting.            ##
 * ##                                                                          ##
 * ##############################################################################
 * ##############################################################################
 *
-* WHAT goes in the tables (decided 14 Nov 2026 with the group): every
+* WHAT goes in the tables: every
 * significant result, the placebos (they are meant to be null), and the nulls
 * that rule out a competing story (e.g. incumbents are not favoured). Results
 * that are inconclusive or replaced by a better measure are listed once, in

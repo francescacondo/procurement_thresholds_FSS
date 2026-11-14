@@ -50,7 +50,7 @@ code/
   net_master.do                network build (Python, called from Part 7 when needed)
   net_py/                      Python scripts of the network build
   net_environment.txt          Python version and packages used for the network build
-  logs/                        Stata logs of the last run
+  logs/                        Stata logs, created when the code runs (not in the repository)
 data/                          not included in the repository (see "Data")
 results/
   report.md                    main results in Markdown

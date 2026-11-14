@@ -4,7 +4,7 @@ Decree-Law 77/2021 raised the limit for direct award of service and supply contr
 This file lists the main results by part. The full explanation, with all tables, is in `results/report_pdf/report.pdf`.
 
 - **Main code:** `code/full_analysis_commented.do`, Parts 1–8. Run everything with `code/00_master.do`.
-- **Log:** `code/logs/full_analysis_commented_p1b.log`.
+- **Log:** `code/logs/full_analysis_commented_p1b.log`, written when the code runs.
 - **Every estimate in one file:** `results/tables/coefficients_p1b.csv`. Columns: table, row, column, b, se, p, N, 95% CI, extra.
 - **Design:** difference in discontinuities at €139k, P2 (Jun 2021–Jun 2023) against P1b (Sep 2020–May 2021). Details:
   - local linear regression, triangular kernel, h = €40k;

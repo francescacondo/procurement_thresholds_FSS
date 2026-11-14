@@ -1,6 +1,9 @@
 # Data: about 16 GB, rebuilt from public ANAC files by the code (see README)
 data/
 
+# Stata logs, written when the code runs
+code/logs/
+
 # Python and LaTeX by-products
 __pycache__/
 *.pyc

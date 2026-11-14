@@ -19,7 +19,6 @@
 *                            adjustment, network extension (Part 7 runs the
 *                            Python build code/net_master.do when needed),
 *                            export of all estimates and LaTeX tables.
-* The old pilot master (do-files 02–05 and 10–14) is in archive/code_pilot/.
 * ==============================================================================
 
 clear all

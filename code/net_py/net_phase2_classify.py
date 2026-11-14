@@ -78,7 +78,7 @@ def prep(df):
 
 
 def toy_test():
-    """Toy network with answers derived by hand (see docs/net_build_note.md)."""
+    """Toy network with answers derived by hand."""
     E = pd.DataFrame([
         ("e1", "a1", "f1", "331", "2019-01-10"), ("e2", "a1", "f2", "331", "2019-03-05"),
         ("e3", "a2", "f2", "332", "2019-02-01"), ("e4", "a2", "f3", "331", "2019-02-15"),

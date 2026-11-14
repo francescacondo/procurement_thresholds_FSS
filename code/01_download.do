@@ -1,6 +1,7 @@
 * ==============================================================================
 * 01_download.do — Download raw data from ANAC open-data portal
 * ==============================================================================
+capture mkdir "code/logs"     // logs are not in the repository
 log using "code/logs/01_download.log", replace
 
 local base "https://dati.anticorruzione.it/opendata/download/dataset"

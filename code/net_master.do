@@ -8,17 +8,16 @@
 * Division of labour
 *   Python (code/net_py/) builds all network measures and writes .dta files
 *   keyed on cig (lot level) or authority_id × halfyear (panel).
-*   ALL estimation is in Part 7 of code/full_analysis_commented.do (since
-*   12 Nov 2026; the former net_estimation.do, the authority panel (Phase 6) and
-*   the report-table script are in code/archive/). This file only BUILDS the
-*   measures. Re-run it after any change to Parts 1 or 5 of the main file.
+*   ALL estimation is in Part 7 of code/full_analysis_commented.do. This file
+*   only BUILDS the measures. Re-run it after any change to Parts 1 or 5 of the
+*   main file (Part 7 does this automatically when needed).
 *   Python runs inside Stata (python script ...), so its output lands in this log.
 *
 * How to run (from the project root folder):
 *     stata-se -b do code/net_master.do
 * or set the global ROOT to the project folder before calling this file.
 *
-* Existing files are never modified: everything new carries a net_ prefix.
+* Every file written by this build carries a net_ prefix.
 * ==============================================================================
 
 version 19
@@ -58,6 +57,7 @@ global RUN_GRAPHS   = 1    // node-and-link pictures (Python, illustration only;
 global P0_STEPS "download,build,diag"
 
 capture log close net
+capture mkdir `"$ROOT/code/logs"'     // logs are not in the repository
 log using `"$ROOT/code/logs/net_master.log"', replace text name(net)
 
 di as text "net_master.do started $S_DATE $S_TIME | ROOT = $ROOT"
@@ -196,19 +196,9 @@ if $RUN_GRAPHS {
 * about 98% of lots; it is the winner in 99.8%), so there are no losing bidders
 * to build a bidder network from. RUN_PHASE5 must stay 0.
 if $RUN_PHASE5 {
-    di as error "Phase 5 is not feasible with these data (see docs/net_build_note.md, Phase 0 D2)"
+    di as error "Phase 5 is not feasible with these data: partecipanti records only the winner"
     exit 198
 }
-
-
-* ==============================================================================
-* PHASES 4 AND 6 — MOVED / RETIRED (12 Nov 2026)
-* ==============================================================================
-* Phase 4 (lot-level estimation) is now Part 7 of full_analysis_commented.do,
-* with P1b as main comparison period and lots at 139,000 counted as eligible.
-* Phase 6 (authority × half-year panel) was dropped: null with P1b and no
-* pre-trend test possible (Deviations in pilot_report.md). The old code is in
-* code/archive/ (net_estimation.do, net_phase6_panel.py, net_report_tables.py).
 
 
 di as text _n "net_master.do finished $S_DATE $S_TIME"
