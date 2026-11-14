@@ -1,0 +1,13 @@
+# Data: about 16 GB, rebuilt from public ANAC files by the code (see README)
+data/
+
+# Python and LaTeX by-products
+__pycache__/
+*.pyc
+report_pdf/*.aux
+report_pdf/*.log
+report_pdf/*.out
+report_pdf/*.toc
+
+# macOS
+.DS_Store
