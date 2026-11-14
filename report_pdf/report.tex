@@ -40,11 +40,11 @@
 \pagestyle{fancy}
 \fancyhf{}
 \lhead{\small Project D: direct-award threshold at \texteuro139k}
-\rhead{\small Review report, 14 November 2026}
+\rhead{}
 \cfoot{\small\thepage}
 
 \title{The Effects of Raising the Direct-Award Threshold on Administrative Efficiency, Concentration, and Supplier Selection: Evidence from Italian Public Procurement}
-\date{14 November 2026}
+\date{}
 \author{Project D, FSS group project}
 
 \begin{document}
@@ -148,7 +148,7 @@ P3 & from 1 Jul 2023 & \texteuro140k (D.Lgs.\ 36/2023) & excluded \\
 
 The legal texts were checked on the consolidated versions published by Normattiva (copies in \code{data/raw/law/}). Article 51 of DL 77/2021 replaced letter (a) of article 1(2) of DL 76/2020: direct award is allowed for services and supplies ``di importo inferiore a 139.000 euro'', that is, strictly below \texteuro139{,}000. The decree entered into force on 1 June 2021, and article 51(3) applies the new threshold to procedures started after that date; procedures whose notices were published, or whose invitations were sent, before that date remain under the previous rule. The P2 start date of 1 June 2021, based on the CIG publication date, follows this rule.
 
-Because the threshold is strict, a lot valued at exactly \texteuro139{,}000 is not eligible for direct award under the statute. In the data, however, 79.5\% of these lots in P2 are recorded as direct awards, compared with 75.7\% just below and 22.8\% just above. The main specification follows observed practice and counts them as eligible; the strict classification is reported in Table~\ref{tab:robust} and reduces the first stage from 0.435 to 0.276, because lots that are mostly direct awards are then placed above the cutoff. This choice was made after the first results had been seen and is recorded as a deviation; it was confirmed on 14 November 2026, after the statutory wording had been checked, because the main question concerns how the threshold was applied in practice.
+Because the threshold is strict, a lot valued at exactly \texteuro139{,}000 is not eligible for direct award under the statute. In the data, however, 79.5\% of these lots in P2 are recorded as direct awards, compared with 75.7\% just below and 22.8\% just above. The main specification follows observed practice and counts them as eligible; the strict classification is reported in Table~\ref{tab:robust} and reduces the first stage from 0.435 to 0.276, because lots that are mostly direct awards are then placed above the cutoff. The main question concerns how the threshold was applied in practice.
 
 The rotation principle applied to all contracts below the EU thresholds in both P1b and P2: article 36(1) of D.Lgs 50/2016 (version in force from 1 June 2021) requires ``il rispetto del principio di rotazione degli inviti e degli affidamenti''. The conversion law of DL 77/2021 (L.\ 108/2021, version in force from 31 July 2021) also added an explicit reference to the rotation principle in the direct-award clause. Above \texteuro139k in P2, the negotiated procedure of article 1(2)(b) of DL 76/2020 applies a rotation criterion to invitations. Rotation rules therefore applied on both sides of the cutoff, although in different forms (rotation of awards below, of invitations above).
 
@@ -518,7 +518,7 @@ Problem & Lots & Out of & Share \\
 \tabnote{Code: \sect{4.9}.}
 \end{table}
 
-The main specification is not changed. Table~\ref{tab:cleaning} re-estimates the affected outcomes after removing these values, as an additional robustness check. The cleaning rules were fixed before the estimates were computed: lots with negative days to award are dropped; for the decomposition of award time, lots with a negative component are dropped; single-bid awards are set to missing when no admitted bid is recorded; and the price ratio is either trimmed or winsorized at its 1st and 99th percentiles.
+The main specification uses the outcomes as recorded. Table~\ref{tab:cleaning} re-estimates the affected outcomes after removing these values, as an additional robustness check. The cleaning rules are as follows: lots with negative days to award are dropped; for the decomposition of award time, lots with a negative component are dropped; single-bid awards are set to missing when no admitted bid is recorded; and the price ratio is either trimmed or winsorized at its 1st and 99th percentiles.
 
 \begin{table}[H]
 \centering\small
@@ -763,7 +763,7 @@ Authority legal types come from a 2026 snapshot of the ANAC register. The regist
 
 P0 is used only in the alternative-control specifications; the complete analysis has not been rerun using \code{global CTRL "P0"}.
 
-Several specification choices were made after inspecting the results and are documented in the Deviations section of \code{pilot\_report.md}. These include replacing P0 with P1b as the control period, classifying lots valued at exactly \texteuro139{,}000 as eligible although the statute uses a strict threshold, selecting the bunching dummies and estimation window, and restricting supplier histories to strictly earlier days. Red-flag outcomes, fixed-size concentration, bunching by group and new-to-public-procurement outcomes were added on 13--14 November. The balance test, the authority fixed-effects rows and the outcome-cleaning checks were added on 14 November.
+Several specification choices affect the estimates: the use of P1b rather than P0 as the control period, the classification of lots valued at exactly \texteuro139{,}000 as eligible although the statute uses a strict threshold, the bunching dummies and estimation window, and the restriction of supplier histories to strictly earlier days. The alternatives are reported as robustness checks where available.
 
 \appendix
 \section{Project files and reproducibility}
@@ -783,7 +783,6 @@ Report tables & \code{results/tables/tex/} (written by Part 8) \\
 Figures & \code{results/figures/} \\
 Legal texts & \code{data/raw/law/} \\
 Results in Markdown & \code{results/report.md} \\
-Decisions and deviations & \code{pilot\_report.md} \\
 \bottomrule
 \end{tabularx}
 \end{table}

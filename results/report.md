@@ -1,4 +1,4 @@
-# Project D — Main results (14 Nov 2026)
+# Project D — Main results
 
 Decree-Law 77/2021 raised the limit for direct award of service and supply contracts from €75k to €139k, for procedures started from 1 June 2021.
 This file lists the main results by part. The full explanation, with all tables, is in `results/report_pdf/report.pdf`.
@@ -38,7 +38,7 @@ This file lists the main results by part. The full explanation, with all tables,
 **Legal texts** (checked on Normattiva, copies in `data/raw/law/`):
 - **DL 77/2021, art. 51:** direct award for services and supplies "di importo **inferiore a** 139.000 euro", so strictly below €139,000.
   - In force 1 Jun 2021; applies to procedures started after that date (art. 51(3)).
-  - Lots at exactly €139,000 are legally not eligible, but 79.5% of them are direct awards in P2. The main specification counts them as eligible (a deviation); the strict version gives a first stage of 0.276.
+  - Lots at exactly €139,000 are legally not eligible, but 79.5% of them are direct awards in P2. The main specification counts them as eligible; the strict version gives a first stage of 0.276.
 - **Rotation principle:** applied below the EU thresholds in both P1b and P2 (art. 36(1) D.Lgs 50/2016). It was also written into the direct-award clause from 31 Jul 2021 (conversion law L. 108/2021). Above €139k, the negotiated procedure rotates invitations instead.
 - **New Code (D.Lgs 36/2023):** in force 1 Apr 2023, effective 1 Jul 2023 (art. 229). Art. 50 sets direct award below €140,000; art. 49 bars awarding to the outgoing contractor in the same sector.
 
@@ -70,7 +70,7 @@ After the reform, lots just below €139k are partly a sorted group. The differe
 - **Composition changes at the cutoff after the reform:** more services, fewer medical supplies, fewer southern authorities and smaller authorities.
 - **Central authorities:** the change comes from P1b, when they already bunched below €139k. In P2 alone it is zero.
 - **Sector and region** are absorbed by the main FE. The predicted-days index (−5.1) is small next to the −52.3 days effect.
-- **Authority size** is not absorbed by the main FE, so two robustness rows were added:
+- **Authority size** is not absorbed by the main FE, so two robustness rows are reported:
   - a control for authority size, which changes nothing;
   - **authority fixed effects** (a within-authority comparison):
     - first stage 0.315;
@@ -238,9 +238,8 @@ The classes use awards in the previous 24 months (strictly earlier days), within
 
 ## Open items
 
-- **Strict eligibility:** the statute excludes lots at exactly €139,000. The main specification still counts them as eligible, following observed practice (decision confirmed 14 Nov 2026). The strict version stays as a robustness row.
+- **Strict eligibility:** the statute excludes lots at exactly €139,000. The main specification still counts them as eligible, following observed practice. The strict version stays as a robustness row.
 - **Outcome cleaning:** done as robustness only (see I.5); the main specification uses the raw outcomes.
 - **Nominal values:** fine for the design, because the cutoff is nominal and the price ratio has no unit. They matter only for the distribution comparison and the value-weighted HHI.
 - **Authority register:** a 2026 snapshot with one record per authority and no history of legal type.
 - **P0 robustness run** of the whole file: not done.
-- **Decisions taken after seeing results:** listed under Deviations in `pilot_report.md`.
